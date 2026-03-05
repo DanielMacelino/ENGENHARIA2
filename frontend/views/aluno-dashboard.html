@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aluno Dashboard - Posto de Saúde</title>
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+
+<body onload="carregarDashboardAluno()">
+
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <div
+                    style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Sistema de Agendamento - Posto de Saúde</h1>
+                <h2>Instituto Federal de Educação, Ciência e Tecnologia do Ceará - Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <a href="/login" class="btn-header-sair">Sair &#x21e8;</a>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-profile">
+                <p>Olá, Aluno. Tudo bem?</p>
+                <strong>IFCE | Campus - Crato</strong>
+            </div>
+            <ul class="sidebar-menu">
+                <span class="menu-title">Menu</span>
+                <li><a href="/aluno/dashboard" class="active"><span style="color:var(--green-light)">&#x1f3e0;</span>
+                        Home</a></li>
+                <li><a href="#"><span style="color:gray;">&#x1f4da;</span> Informações Acadêmicas</a></li>
+                <li><a href="/aluno/agendamentos"><span style="color:gray;">&#x1f4c5;</span> Agendamentos</a></li>
+                <li><a href="#"><span style="color:gray;">&#x2139;</span> Sobre</a></li>
+            </ul>
+        </aside>
+
+        <main class="content-area">
+
+            <div class="page-header" style="border-bottom:none; margin-bottom: 10px;">
+                <h2 class="page-title">Próximos agendamentos</h2>
+                <!-- Botão simula ação de modal/abrir form POST /agendamentos -->
+                <button onclick="novoAgendamentoModal()" class="btn-green">+ Novo Agendamento</button>
+            </div>
+            <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:20px;">
+
+            <div class="card" style="border-left: 5px solid var(--green-primary); max-width: 400px; padding: 15px;">
+                <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px; color:#444;">
+                    <span style="color:red">&#x1f4cc;</span> Psicólogo
+                </div>
+                <div class="stats-text" style="color:#555;">
+                    &#x1f4c5; <span>04/12/2026 - 14:00</span>
+                </div>
+                <div class="stats-text" style="color:#555;">
+                    &#x1f4cd; Sala 12 - IFCE
+                </div>
+            </div>
+
+            <div class="page-header"
+                style="margin-top: 40px; border-bottom:none; justify-content:flex-start; gap: 20px;">
+                <h2 class="page-title">Horários da semana</h2>
+                <div style="background:#ddd; padding:5px 15px; border-radius:20px; font-size:0.9rem;">
+                    &#x1f4c5; <span id="semana-atual">20/11/2025</span>
+                </div>
+                <div
+                    style="background:#eee; padding:5px 15px; border-radius:20px; font-size:0.9rem; border:1px solid #ccc;">
+                    &#x1f468;&#x200d;&#x2695;&#xfe0f; Clínico Geral
+                </div>
+            </div>
+
+            <!-- Grade de Horários simulando GET /profissionais/horarios -->
+            <div class="card" style="background:transparent; padding:0; box-shadow:none;">
+                <div class="schedule-grid-container" id="grade-horarios">
+                    <!-- Preenchido via JS fake -->
+                    Carregando grade de horários disponíveis...
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Script com lógica simulada -->
+    <script src="/public/script.js"></script>
+</body>
+
+</html>

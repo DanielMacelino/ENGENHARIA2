@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Agenda IFCE</title>
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+
+<body>
+
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <div
+                    style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Sistema de Agendamento - Posto de Saúde</h1>
+                <h2>Instituto Federal de Educação, Ciência e Tecnologia do Ceará - Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <a href="#" style="color: white; font-size: 0.9rem; text-decoration: none; font-weight: bold;">Cadastrar</a>
+        </div>
+    </header>
+
+    <div class="login-body">
+        <div class="login-card">
+
+            <div class="login-logo" style="flex-direction: column; gap: 0;">
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <span
+                        style="color:red; font-size:2rem; background:white; border-radius:50%; border:2px solid #ccc; padding: 2px 5px;">&#x1f4c5;</span>
+                    <div style="text-align:left;">
+                        <span style="display:block; color:var(--green-primary); font-size: 1.6rem;">IFCE Agenda</span>
+                        <span
+                            style="display:block; color:red; font-size: 0.9rem; font-weight:normal; margin-top:-5px;">CRATO</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-google">
+                <span style="color:blue; font-weight:bold;">G</span> Entrar com Gmail
+            </button>
+
+            <!-- Formulário que chamará a API: POST /login -->
+            <form id="form-login" class="login-form">
+                <div>
+                    <input type="email" id="email" placeholder="Email (use aluno@ifce.br ou outro)" required>
+                </div>
+                <div>
+                    <input type="password" id="senha" placeholder="Senha" required>
+                </div>
+
+                <div
+                    style="display:flex; align-items:center; gap:8px; font-size:0.9rem; justify-content:flex-start; margin-top:5px; margin-bottom:10px;">
+                    <input type="checkbox" id="lembrar" style="width:auto;">
+                    <label for="lembrar">Lembre-me</label>
+                </div>
+
+                <button type="submit" class="btn-green" id="btn-entrar"
+                    style="border-radius:20px; width: 150px; margin: 0 auto; justify-content:center;">Entrar</button>
+            </form>
+
+            <div style="margin-top:20px; font-size:0.85rem; color:#666;">
+                Esqueceu a senha? <a href="#" style="color:blue; text-decoration:none;">Redefinir aqui.</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/public/script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aluno Agendamentos - Posto de Saúde</title>
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+
+<body onload="carregarAgendamentosAluno()">
+
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <div
+                    style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Sistema de Agendamento - Posto de Saúde</h1>
+                <h2>Instituto Federal de Educação, Ciência e Tecnologia do Ceará - Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <a href="/login" class="btn-header-sair">Sair &#x21e8;</a>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-profile">
+                <p>Olá, Aluno. Tudo bem?</p>
+                <strong>IFCE | Campus - Crato</strong>
+            </div>
+            <ul class="sidebar-menu">
+                <span class="menu-title">Menu</span>
+                <li><a href="/aluno/dashboard"><span style="color:gray">&#x1f3e0;</span> Home</a></li>
+                <li><a href="#"><span style="color:gray;">&#x1f4da;</span> Informações Acadêmicas</a></li>
+                <li><a href="/aluno/agendamentos" class="active"><span style="color:var(--green-light)">&#x1f4c5;</span>
+                        Agendamentos</a></li>
+                <li><a href="#"><span style="color:gray;">&#x2139;</span> Sobre</a></li>
+            </ul>
+        </aside>
+
+        <main class="content-area">
+
+            <div class="page-header" style="border-bottom:none; margin-bottom: 10px;">
+                <h2 class="page-title">Dashboard</h2>
+                <button onclick="novoAgendamentoModal()" class="btn-green">+ Novo Agendamento</button>
+            </div>
+            <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:30px;">
+
+            <div style="margin-bottom: 40px; font-size: 0.95rem; line-height: 1.8; color: #555;">
+                <div class="stats-text"><span style="color:var(--green-light)">&#x2714;</span> Você teve no total: <span
+                        id="total-consultas">3</span> agendamentos</div>
+                <div class="stats-text"><span style="color:red">&#x2716;</span> Consulta pendente: <span
+                        id="total-pendente">1</span> consulta pendente</div>
+                <div class="stats-text"><span style="color:gray">&#x21c4;</span> Consulta Marcada: 1 consulta marcada
+                </div>
+            </div>
+
+            <h3 style="color:#444; margin-bottom: 20px; font-weight:500;">Meus agendamentos</h3>
+
+            <div style="display:flex; gap:15px; margin-bottom: 15px;">
+                <div
+                    style="background:#e8f0fe; padding:8px 15px; border-radius:5px; border:1px solid #c2d7fb; font-size:0.9rem; display:flex; align-items:center; gap:8px;">
+                    &#x1f4c5; <span id="mes-atual">12/2026</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th style="background:#aaa; color:white;">Serviço</th>
+                            <th style="background:#aaa; color:white;">Data</th>
+                            <th style="background:#aaa; color:white;">Hora</th>
+                            <th style="background:#aaa; color:white;">Profissional</th>
+                            <th style="background:#aaa; color:white;">Status</th>
+                            <th style="background:#aaa; color:white;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-agendamentos">
+                        <tr>
+                            <td colspan="6">Carregando seus agendamentos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Script com lógica simulada API -->
+    <script src="/public/script.js"></script>
+</body>
+
+</html>

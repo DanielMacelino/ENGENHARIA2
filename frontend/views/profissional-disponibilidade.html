@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disponibilidade - Posto de Saúde</title>
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+
+<body onload="carregarSetupProfissional()">
+
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <div
+                    style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Sistema de Agendamento - Posto de Saúde</h1>
+                <h2>Instituto Federal de Educação, Ciência e Tecnologia do Ceará - Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <a href="/login" class="btn-header-sair">Sair &#x21e8;</a>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-profile">
+                <!-- Mostra nome como Profissional -->
+                <p>Olá, Doutor. Tudo bem?</p>
+                <strong>IFCE | Campus - Crato</strong>
+            </div>
+            <ul class="sidebar-menu">
+                <span class="menu-title">Menu</span>
+                <li><a href="#"><span style="color:gray">&#x1f3e0;</span> Home</a></li>
+                <li><a href="#"><span style="color:gray;">&#x1f4da;</span> Informações Acadêmicas</a></li>
+                <li><a href="#"><span style="color:gray;">&#x1f4c5;</span> Agendamentos</a></li>
+                <li><a href="/profissional/disponibilidade" class="active"><span
+                            style="color:var(--green-light)">&#x1f4c6;</span> Cadastrar escala</a></li>
+                <li><a href="#"><span style="color:gray;">&#x2139;</span> Sobre</a></li>
+            </ul>
+        </aside>
+
+        <main class="content-area">
+
+            <div class="page-header" style="border-bottom:none; margin-bottom: 10px;">
+                <h2 class="page-title">Disponibilidade</h2>
+            </div>
+            <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:30px;">
+
+            <div>
+                <div class="form-group-select">
+                    <label style="display:block; margin-bottom:5px; font-size:0.9rem; color:#444;">Especialista:</label>
+                    <select id="especialidade" style="border-radius:0;">
+                        <option>Clínico Geral</option>
+                        <option>Psicólogo</option>
+                        <option>Dentista</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="profissional-setup-container">
+
+                <!-- Calendário -->
+                <div class="calendar-box">
+                    <p style="margin-bottom:5px; font-size:0.9rem; color:#444;">Data:</p>
+                    <div style="border: 2px solid #ccc; border-radius:5px;">
+                        <div class="calendar-header">
+                            <span style="cursor:pointer">&lt;</span>
+                            <span>Dezembro/2026</span>
+                            <span style="cursor:pointer">&gt;</span>
+                        </div>
+                        <div class="calendar-grid">
+                            <div class="calendar-day-header">D</div>
+                            <div class="calendar-day-header">S</div>
+                            <div class="calendar-day-header">T</div>
+                            <div class="calendar-day-header">Q</div>
+                            <div class="calendar-day-header">Q</div>
+                            <div class="calendar-day-header">S</div>
+                            <div class="calendar-day-header">S</div>
+
+                            <!-- Fake Days -->
+                            <div class="calendar-day" style="color:#aaa">29</div>
+                            <div class="calendar-day" style="color:#aaa">30</div>
+                            <div class="calendar-day">1</div>
+                            <div class="calendar-day">2</div>
+                            <div class="calendar-day">3</div>
+                            <div class="calendar-day">4</div>
+                            <div class="calendar-day">5</div>
+                            <div class="calendar-day">6</div>
+                            <div class="calendar-day">7</div>
+                            <div class="calendar-day">8</div>
+                            <div class="calendar-day">9</div>
+                            <div class="calendar-day">10</div>
+                            <div class="calendar-day">11</div>
+                            <div class="calendar-day selected">12</div>
+                            <div class="calendar-day">13</div>
+                            <div class="calendar-day">14</div>
+                            <div class="calendar-day">15</div>
+                            <div class="calendar-day">16</div>
+                            <div class="calendar-day">17</div>
+                            <div class="calendar-day">18</div>
+                            <div class="calendar-day">19</div>
+                            <div class="calendar-day">20</div>
+                            <div class="calendar-day">21</div>
+                            <div class="calendar-day">22</div>
+                            <div class="calendar-day">23</div>
+                            <div class="calendar-day">24</div>
+                            <div class="calendar-day">25</div>
+                            <div class="calendar-day">26</div>
+                            <div class="calendar-day">27</div>
+                            <div class="calendar-day">28</div>
+                            <div class="calendar-day">29</div>
+                            <div class="calendar-day">30</div>
+                            <div class="calendar-day">31</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Horários -->
+                <div class="hours-selection-box">
+                    <p style="margin-bottom:5px; font-size:0.9rem; color:#444;">Horários:</p>
+                    <div style="border: 2px solid #ccc; border-radius:5px; overflow:hidden;">
+                        <div
+                            style="background:#222; color:white; text-align:center; padding:5px; font-size:0.8rem; letter-spacing:1px;">
+                            HORÁRIO</div>
+                        <div style="padding:10px; background:#f0f0f0;" id="lista-horarios-prof">
+                            <!-- Preenchido via setup script.js -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botão da ação POST /disponibilidade -->
+            <div style="margin-top: 40px;">
+                <button onclick="salvarDisponibilidade()" class="btn-green"
+                    style="background:#13872c; padding: 10px 20px;">Salvar disponibilidade</button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Script com lógica simulada API -->
+    <script src="/public/script.js"></script>
+</body>
+
+</html>

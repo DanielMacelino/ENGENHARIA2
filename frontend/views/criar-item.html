@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Item - IFCE</title>
+    <!-- Inclui o arquivo de configuração e estilos -->
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+
+<body>
+
+    <!-- Header Principal -->
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <!-- Simulação de logo IFCE -->
+                <div
+                    style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Sistema de Gerenciamento de Itens</h1>
+                <h2>Instituto Federal de Educação, Ciência e Tecnologia do Ceará - Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <!-- Botão sair volta para o login simulando deslogar -->
+            <a href="/login" class="btn-header-sair">Sair &#x21e8;</a>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <!-- Menu Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-profile">
+                <p>Olá, Administrador. Tudo bem?</p>
+                <strong>IFCE | Campus - Crato</strong>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/itens"><span style="color:var(--green-light)">&#x2714;</span> Home</a></li>
+                <li><a href="/itens"><span style="color:gray;">&#x1f4ca;</span> Lista de Itens</a></li>
+                <li><a href="/criar-item" class="active"><span style="color:gray;">&#x2795;</span> Cadastrar Item</a>
+                </li>
+                <li><a href="/logs"><span style="color:gray;">&#x1f4dc;</span> Logs e Relatórios</a></li>
+                <li><a href="#"><span style="color:gray;">&#x2139;</span> Sobre</a></li>
+            </ul>
+        </aside>
+
+        <!-- Área de Conteúdo -->
+        <main class="content-area">
+
+            <div class="page-title">
+                Cadastrar Novo Item
+                <a href="/itens" class="btn-green"
+                    style="background-color:#777; font-size: 0.9rem; padding: 8px 15px;">Voltar</a>
+            </div>
+            <p class="page-subtitle">Preencha o formulário para adicionar ao inventário.</p>
+
+            <div class="card" style="max-width: 600px; margin: 0 auto; margin-top: 40px;">
+                <h3 style="text-align: center; color: var(--green-primary); margin-bottom: 20px;">Formulário de Cadastro
+                </h3>
+
+                <!-- Formulário que chamará a Rota: POST /itens -->
+                <form onsubmit="salvarNovoItem(event)">
+
+                    <div class="form-group">
+                        <label for="nomeItem">Nome do Item:</label>
+                        <input type="text" id="nomeItem" placeholder="Ex: Cadeira Universitária" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="categoriaItem">Categoria:</label>
+                        <select id="categoriaItem" required>
+                            <option value="">Selecione uma categoria...</option>
+                            <option value="Móveis">Móveis</option>
+                            <option value="Eletrônicos">Eletrônicos</option>
+                            <option value="Material de Limpeza">Material de Limpeza</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qtdItem">Quantidade Inicial:</label>
+                        <input type="number" id="qtdItem" min="1" value="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="obsItem">Observações:</label>
+                        <textarea id="obsItem" rows="3" placeholder="Detalhes opcionais do item..."></textarea>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button type="submit" class="btn-green" id="btn-salvar-item" style="width: 100%;">Gravar
+                            Item</button>
+                    </div>
+                </form>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Inclui os scripts da aplicação -->
+    <script src="/public/script.js"></script>
+</body>
+
+</html>

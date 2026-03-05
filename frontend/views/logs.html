@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs de Sistema - IFCE</title>
+    <!-- Inclui o arquivo de configuração e estilos -->
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+
+<body onload="carregarLogs()">
+
+    <!-- Header Principal -->
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <!-- Simulação de logo IFCE -->
+                <div
+                    style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Sistema de Gerenciamento de Itens</h1>
+                <h2>Instituto Federal de Educação, Ciência e Tecnologia do Ceará - Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <!-- Botão sair volta para o login simulando deslogar -->
+            <a href="/login" class="btn-header-sair">Sair &#x21e8;</a>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <!-- Menu Lateral -->
+        <aside class="sidebar">
+            <div class="sidebar-profile">
+                <p>Olá, Administrador. Tudo bem?</p>
+                <strong>IFCE | Campus - Crato</strong>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/itens"><span style="color:var(--green-light)">&#x2714;</span> Home</a></li>
+                <li><a href="/itens"><span style="color:gray;">&#x1f4ca;</span> Lista de Itens</a></li>
+                <li><a href="/criar-item"><span style="color:gray;">&#x2795;</span> Cadastrar Item</a></li>
+                <li><a href="/logs" class="active"><span style="color:gray;">&#x1f4dc;</span> Logs e Relatórios</a></li>
+                <li><a href="#"><span style="color:gray;">&#x2139;</span> Sobre</a></li>
+            </ul>
+        </aside>
+
+        <!-- Área de Conteúdo -->
+        <main class="content-area">
+
+            <div class="page-title">
+                Logs de Acesso e Ações
+                <span class="badge active" style="font-size: 0.8rem; padding: 5px 15px;">Módulo de Logs</span>
+            </div>
+            <p class="page-subtitle">Acompanhamento e auditoria do sistema em tempo real.</p>
+
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap;">
+                    <h3 style="color: #444; margin-bottom: 10px;">Relatório de Ações</h3>
+                    <div style="display:flex; gap:10px; align-items: center;">
+                        <label for="dataFiltro" style="font-size: 0.9rem;">Filtrar por data:</label>
+                        <input type="date" id="dataFiltro" value="2026-03-05"
+                            style="padding: 6px; border-radius:4px; border:1px solid #ccc; outline:none;">
+                        <button onclick="filtrarLogs()" class="btn-green"
+                            style="font-size: 0.85rem; padding: 6px 15px;">&#x1f50d; Filtrar</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive" style="margin-top: 20px;">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>Data / Hora</th>
+                                <th>Usuário</th>
+                                <th>Ação Realizada</th>
+                                <th>Detalhe / Item Afetado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-logs">
+                            <tr>
+                                <td colspan="4">Carregando logs da API...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Inclui os scripts da aplicação -->
+    <script src="/public/script.js"></script>
+</body>
+
+</html>
