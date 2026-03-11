@@ -1,6 +1,6 @@
 import express from "express";
 import * as Controller from "../controllers/userController.js";
-import { logRequest, workingDaysOnly } from "../middlewares/appMiddleware.js";
+import { logRequest, workingDaysOnly } from "./middlewares/appMiddleware.js";
 
 const router = express.Router();
 
