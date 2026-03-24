@@ -7,7 +7,7 @@ Este documento detalha o cumprimento integral dos requisitos solicitados para o 
 
 ---
 
-## 🎴 Passinho 1: Autenticação
+## 🎴  1: Autenticação
 ### Requisito A: Rota `POST /logar`
 > Recebe email e senha e devolve um Token JWT válido para acessar as demais rotas.
 
@@ -39,7 +39,7 @@ export const login = async (req, res) => {
 
 ---
 
-## 🎴 Passinho 2: Listagem de Itens
+## 🎴  2: Listagem de Itens
 ### Requisito B: Rota `GET /itens`
 > Retorna a lista completa de itens cadastrados (Mocks).
 
@@ -53,7 +53,7 @@ export const getItens = (req, res) => {
 
 ---
 
-## 🎴 Passinho 3: Inserção de Itens (Persistência Dupla)
+## 🎴  3: Inserção de Itens (Persistência Dupla)
 ### Requisito C: Rota `POST /itens`
 > Insere no Supabase (Banco de Dados) e mantém no Array local (Requisito H).
 
@@ -78,7 +78,7 @@ export const criarItem = async (req, res) => {
 
 ---
 
-## 🎴 Passinho 4: Exclusão de Itens
+## 🎴  4: Exclusão de Itens
 ### Requisito D: Rota `DELETE /itens/:id`
 > Remove um item do banco utilizando o Supabase filtrando pelo ID.
 
@@ -95,7 +95,7 @@ export const deleteItem = async (req, res) => {
 
 ---
 
-## 🎴 Passinho 5: Pesquisa por Código
+## 🎴  5: Pesquisa por Código
 ### Requisito F: Rota `GET /itens/:codigo`
 > Realiza uma busca filtrada no banco de dados via Supabase.
 
@@ -116,7 +116,7 @@ export const getItems = async (req, res) => {
 
 ---
 
-## 🎴 Passinho 6: Controle de Acesso (D² - Middleware)
+## 🎴  6: Controle de Acesso (D² - Middleware)
 ### Requisito D (Bis): Restrição de Dias Úteis
 > Middleware que permite o acesso da API apenas de segunda à sexta.
 
@@ -134,7 +134,7 @@ export const workingDaysOnly = (req, res, next) => {
 
 ---
 
-## 🎴 Passinho 7: Auditoria de Requisições
+## 🎴  7: Auditoria de Requisições
 ### Requisito E: Middleware de Registro de Logs
 > Registra o horário e a rota de cada requisição realizada.
 
@@ -151,7 +151,7 @@ export const logRequest = (req, res, next) => {
 
 ---
 
-## 🎴 Passinho 8: Consulta de Auditoria
+## 🎴  8: Consulta de Auditoria
 ### Requisito F (Bis): Rota `GET /logs/:data`
 > Retorna os registros de requisição em uma determinada data informada.
 
@@ -167,7 +167,7 @@ export const getLogsPorData = (req, res) => {
 
 ---
 
-## 🎴 Passinho 9: Download de PDF
+## 🎴  9: Download de PDF
 ### Requisito G: Rota `GET /relatorio`
 > Gera um arquivo PDF para download contendo a lista de itens do mock.
 
@@ -195,7 +195,7 @@ export const generatePDF = (req, res) => {
 
 ---
 
-## 🎴 Passinho 10: Persistência e Cloud
+## 🎴  10: Persistência e Cloud
 ### Requisitos H, I & J
 > **H (Dados Mockados):** Definidos no topo do `userController.js` (L9: `usuarios` e L14: `itens`).
 > **I (GitHub):** Versionado no repositório `DanielMacelino/ENGENHARIA2`.
