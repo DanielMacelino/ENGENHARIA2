@@ -1,7 +1,7 @@
 # 🩺 Sistema de Agendamento - Posto de Saúde (IFCE - Campus Crato)
 ### 📑 Memorial Descritivo - Mapeamento de Requisitos da API
 
-Este documento detalha o cumprimento integral dos requisitos solicitados para o seminário. Abaixo, apresentamos a função completa correspondente a cada item solicitado.
+Este documento detalha o cumprimento integral dos requisitos solicitados para o seminário. Abaixo, apresentamos a função completa correspondente a cada item solicitado, garantindo a rastreabilidade entre o código e a funcionalidade.
 
 **Apresentado por:** Daniel, Vitoria e Alexandre - 2026
 
@@ -9,7 +9,7 @@ Este documento detalha o cumprimento integral dos requisitos solicitados para o 
 
 ## 🎴 Passinho 1: Autenticação
 ### Requisito A: Rota `POST /logar`
-> Recebe email e senha e devolve um Token JWT válido.
+> Recebe email e senha e devolve um Token JWT válido para acessar as demais rotas.
 
 **Localização:** `backend/userController.js:L40`
 **Código Completo:**
@@ -41,9 +41,9 @@ export const login = async (req, res) => {
 
 ## 🎴 Passinho 2: Listagem de Itens
 ### Requisito B: Rota `GET /itens`
-> Retorna a lista completa de itens cadastrados no sistema.
+> Retorna a lista completa de itens cadastrados (Mocks).
 
-**Localização:** `backend/userController.js:L62`
+**Localização:** `backend/userController.js:L63`
 **Código Completo:**
 ```javascript
 export const getItens = (req, res) => {
@@ -53,30 +53,36 @@ export const getItens = (req, res) => {
 
 ---
 
-## 🎴 Passinho 3: Inserção de Itens
+## 🎴 Passinho 3: Inserção de Itens (Persistência Dupla)
 ### Requisito C: Rota `POST /itens`
-> Adiciona um novo item ao array mockado de dados.
+> Insere no Supabase (Banco de Dados) e mantém no Array local (Requisito H).
 
-**Localização:** `backend/userController.js:L67`
+**Localização:** `backend/userController.js:L68`
 **Código Completo:**
 ```javascript
-export const criarItem = (req, res) => {
+export const criarItem = async (req, res) => {
     const { nome, codigo, descricao } = req.body;
     if (!nome || !codigo) return res.status(400).json({ error: "Nome e código são obrigatórios" });
 
-    const novo = { id: String(itens.length + 1), nome, codigo, descricao };
+    // Inserção no Supabase para manter consistência com search/delete
+    const { data, error } = await supabase.from("itens").insert([{ nome, codigo, descricao }]).select();
+    
+    // Fallback para o mock local (Requisito H)
+    const novo = { id: data ? data[0].id : String(itens.length + 1), nome, codigo, descricao };
     itens.push(novo);
+
+    if (error) return res.status(500).json(error);
     return res.status(201).json(novo);
 };
 ```
 
 ---
 
-## 🎴 Passinho 4: Exclusão de Itens (Integração Supabase)
+## 🎴 Passinho 4: Exclusão de Itens
 ### Requisito D: Rota `DELETE /itens/:id`
-> Remove um item do banco utilizando o Supabase.
+> Remove um item do banco utilizando o Supabase filtrando pelo ID.
 
-**Localização:** `backend/userController.js:L78`
+**Localização:** `backend/userController.js:L84`
 **Código Completo:**
 ```javascript
 export const deleteItem = async (req, res) => {
@@ -89,11 +95,11 @@ export const deleteItem = async (req, res) => {
 
 ---
 
-## 🎴 Passinho 5: Pesquisa por Código (Integração Supabase)
+## 🎴 Passinho 5: Pesquisa por Código
 ### Requisito F: Rota `GET /itens/:codigo`
-> Realiza uma busca filtrada no banco de dados.
+> Realiza uma busca filtrada no banco de dados via Supabase.
 
-**Localização:** `backend/userController.js:L86`
+**Localização:** `backend/userController.js:L92`
 **Código Completo:**
 ```javascript
 export const getItems = async (req, res) => {
@@ -110,9 +116,9 @@ export const getItems = async (req, res) => {
 
 ---
 
-## 🎴 Passinho 6: Controle de Acesso (Segunda a Sexta)
-### Requisito D (Bis): Middleware `workingDaysOnly`
-> Restringe o uso da API apenas em dias úteis.
+## 🎴 Passinho 6: Controle de Acesso (D² - Middleware)
+### Requisito D (Bis): Restrição de Dias Úteis
+> Middleware que permite o acesso da API apenas de segunda à sexta.
 
 **Localização:** `backend/src/middlewares/appMiddleware.js:L12`
 **Código Completo:**
@@ -128,9 +134,9 @@ export const workingDaysOnly = (req, res, next) => {
 
 ---
 
-## 🎴 Passinho 7: Auditoria em Tempo Real (Registros)
-### Requisito E: Middleware `logRequest`
-> Registra automaticamente a rota, o método e o horário de cada requisição.
+## 🎴 Passinho 7: Auditoria de Requisições
+### Requisito E: Middleware de Registro de Logs
+> Registra o horário e a rota de cada requisição realizada.
 
 **Localização:** `backend/src/middlewares/appMiddleware.js:L4`
 **Código Completo:**
@@ -141,29 +147,19 @@ export const logRequest = (req, res, next) => {
     registrarLog(req.method, req.url);
     next();
 };
-
-// Lógica auxiliar no Controller (L29-L37):
-export const registrarLog = (metodo, rota) => {
-    const agora = new Date();
-    logsRequisicoes.push({
-        data: agora.toISOString().split('T')[0],
-        horario: agora.toLocaleTimeString(),
-        metodo, rota
-    });
-};
 ```
 
 ---
 
-## 🎴 Passinho 8: Consulta de Logs por Data
+## 🎴 Passinho 8: Consulta de Auditoria
 ### Requisito F (Bis): Rota `GET /logs/:data`
-> Retorna o histórico de requisições de uma data específica.
+> Retorna os registros de requisição em uma determinada data informada.
 
-**Localização:** `backend/userController.js:L98`
+**Localização:** `backend/userController.js:L104`
 **Código Completo:**
 ```javascript
 export const getLogsPorData = (req, res) => {
-    const { data } = req.params; 
+    const { data } = req.params; // esperado: AAAA-MM-DD
     const filtrados = logsRequisicoes.filter(l => l.data === data);
     return res.json(filtrados);
 };
@@ -171,11 +167,11 @@ export const getLogsPorData = (req, res) => {
 
 ---
 
-## 🎴 Passinho 9: Relatórios Automatizados (PDF)
+## 🎴 Passinho 9: Download de PDF
 ### Requisito G: Rota `GET /relatorio`
-> Gera dinamicamente um PDF para download do usuário.
+> Gera um arquivo PDF para download contendo a lista de itens do mock.
 
-**Localização:** `backend/userController.js:L111`
+**Localização:** `backend/userController.js:L116`
 **Código Completo:**
 ```javascript
 export const generatePDF = (req, res) => {
@@ -183,18 +179,27 @@ export const generatePDF = (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=relatorio.pdf');
     doc.pipe(res);
-    doc.fontSize(20).text("Relatório de Itens", { align: 'center' });
+    doc.fontSize(20).text("Relatório de Itens do Sistema", { align: 'center' });
+    doc.moveDown();
+
+    // Listagem real dos itens no PDF
+    itens.forEach(item => {
+        doc.fontSize(12).text(`- ${item.nome} (Código: ${item.codigo})`);
+        if(item.descricao) doc.fontSize(10).text(`  Descrição: ${item.descricao}`);
+        doc.moveDown(0.5);
+    });
+
     doc.end();
 };
 ```
 
 ---
 
-## 🎴 Passinho 10: Estrutura, GitHub e Deploy
+## 🎴 Passinho 10: Persistência e Cloud
 ### Requisitos H, I & J
-> **H (Mocks):** Arrays `usuarios` (L8) e `itens` (L14) integrados no código.
-> **I (GitHub):** Versionado via Git local e remoto.
-> **J (Nuvem):** Deploy configurado em `vercel.json` na raiz do projeto.
+> **H (Dados Mockados):** Definidos no topo do `userController.js` (L9: `usuarios` e L14: `itens`).
+> **I (GitHub):** Versionado no repositório `DanielMacelino/ENGENHARIA2`.
+> **J (Vercel):** Aplicação configurada com `vercel.json` na raiz e rodando na nuvem.
 
 ---
-*Fim da Apresentação - 2026*
+*Apresentado por Daniel, Vitoria e Alexandre - 2026*
