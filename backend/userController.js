@@ -1,42 +1,39 @@
 import jwt from "jsonwebtoken";
 import PDFDocument from "pdfkit";
-import supabase from "./supabaseClient.js";
 
 const JWT_SECRET = "ifce_posto_saude_secret";
 
-// Requisito H: Todos os dados mockados em arrays
 const usuarios = [
     { id: "1", email: "aluno@ifce.edu.br", senha: "123456", tipo_usuario: "aluno", nome: "Aluno Teste" },
-    { id: "3", email: "aluno@ifce.br", senha: "123456", tipo_usuario: "aluno", nome: "Aluno Teste" },
     { id: "2", email: "prof@ifce.edu.br", senha: "123456", tipo_usuario: "profissional", nome: "Dr. Profissional Teste" }
 ];
 
 const itens = [
-    { id: "1", nome: "Consulta Clínica", codigo: "CC001", descricao: "Atendimento geral" },
-    { id: "2", nome: "Limpeza Dental", codigo: "LD002", descricao: "Procedimento odontológico" },
-    { id: "4", nome: "Acompanhamento Psicológico", codigo: "AP003", descricao: "Sessão de terapia" }
+    { id: "1", nome: "Seringa", codigo: "SER001", descricao: "Seringa descartável 5ml" },
+    { id: "2", nome: "Luva", codigo: "LUV001", descricao: "Luva de procedimento M" },
+    { id: "3", nome: "Curativo", codigo: "CUR001", descricao: "Curativo adesivo estéril" }
 ];
 
-// Dados Extras para manter o frontend atual funcionando (Dashboard)
 const disponibilidades = [
-    { profissional_id: "2", especialidade: "Geral", data: "2025-06-10", horarios: ["08:00", "08:20", "08:40", "09:00", "09:20"] },
-    { profissional_id: "2", especialidade: "Dentista", data: "2025-06-11", horarios: ["09:00", "09:20", "09:40"] }
+    { id: "d1", profissional_id: "2", especialidade: "Geral", data: "2025-06-10", horarios: ["08:00", "08:20", "08:40", "09:00", "09:20"] },
+    { id: "d2", profissional_id: "2", especialidade: "Dentista", data: "2025-06-11", horarios: ["09:00", "09:20", "09:40"] }
 ];
 
-// Requisito E/F: Registro de logs
-export const logsRequisicoes = [];
+const agendamentos = [
+    { id: "a1", aluno_id: "1", profissional_id: "2", especialidade: "Dentista", data: "2025-06-12", hora: "09:00", status: "Confirmado" }
+];
+
+const logsRequisicoes = [];
 
 export const registrarLog = (metodo, rota) => {
     const agora = new Date();
-    logsRequisicoes.push({
-        data: agora.toISOString().split('T')[0],
-        horario: agora.toLocaleTimeString(),
-        metodo,
-        rota
-    });
+    const data = agora.toISOString().split("T")[0];
+    const hora = agora.toLocaleTimeString();
+    logsRequisicoes.push({ metodo, rota, data, hora });
 };
 
-// Requisito A: Rota POST /logar
+// Código Principal
+
 export const login = async (req, res) => {
     const { email, senha } = req.body;
 
@@ -59,60 +56,52 @@ export const login = async (req, res) => {
     return res.json({ token, tipo_usuario: usuario.tipo_usuario });
 };
 
-// Requisito B: Rota GET para obter lista de itens
 export const getItens = (req, res) => {
     return res.json(itens);
 };
 
-// Requisito C: Rota POST para inserir novo item
 export const criarItem = async (req, res) => {
     const { nome, codigo, descricao } = req.body;
-    if (!nome || !codigo) return res.status(400).json({ error: "Nome e código são obrigatórios" });
 
-    // Inserção no Supabase para manter consistência com search/delete
-    const { data, error } = await supabase.from("itens").insert([{ nome, codigo, descricao }]).select();
-    
-    // Fallback para o mock local (Requisito H)
-    const novo = { id: data ? data[0].id : String(itens.length + 1), nome, codigo, descricao };
+    if (!nome || !codigo) {
+        return res.status(400).json({ error: "Nome e código são obrigatórios." });
+    }
+
+    const novo = { id: String(itens.length + 1), nome, codigo, descricao };
     itens.push(novo);
 
-    if (error) return res.status(500).json(error);
     return res.status(201).json(novo);
 };
 
-// Requisito D: Rota DELETE para excluir um item
 export const deleteItem = async (req, res) => {
     const { id } = req.params;
-    const { error } = await supabase.from("itens").delete().eq("id", id);
-    if (error) return res.status(500).json(error);
-    res.json({ message: "Item removido com sucesso" });
+    const index = itens.findIndex(i => i.id === id);
+
+    if (index === -1) {
+        return res.status(404).json({ error: "Item não encontrado." });
+    }
+
+    itens.splice(index, 1);
+    return res.json({ message: "Item removido com sucesso." });
 };
 
-// Requisito F: Rota GET pesquisar item pelo código
 export const getItems = async (req, res) => {
     const { codigo } = req.params;
-    let query = supabase.from("itens").select("*");
+    const item = itens.find(i => i.codigo === codigo);
 
-    if (codigo) query = query.eq("codigo", codigo);
+    if (!item) {
+        return res.status(404).json({ error: "Item não encontrado." });
+    }
 
-    const { data, error } = await query;
-    if (error) return res.status(500).json(error);
-    res.json(data);
+    return res.json(item);
 };
 
-// Requisito F (extra): GET logs por data
 export const getLogsPorData = (req, res) => {
-    const { data } = req.params; // esperado: AAAA-MM-DD
+    const { data } = req.params;
     const filtrados = logsRequisicoes.filter(l => l.data === data);
     return res.json(filtrados);
 };
 
-// Compatibilidade com o Frontend Dashboard
-export const getHorariosMock = (req, res) => {
-    return res.json(disponibilidades);
-};
-
-// Requisito G: Gerar PDF
 export const generatePDF = (req, res) => {
     const doc = new PDFDocument();
     res.setHeader('Content-Type', 'application/pdf');
@@ -121,13 +110,62 @@ export const generatePDF = (req, res) => {
     doc.fontSize(20).text("Relatório de Itens do Sistema", { align: 'center' });
     doc.moveDown();
 
-    // Listagem real dos itens no PDF
     itens.forEach(item => {
         doc.fontSize(12).text(`- ${item.nome} (Código: ${item.codigo})`);
-        if(item.descricao) doc.fontSize(10).text(`  Descrição: ${item.descricao}`);
+        if (item.descricao) doc.fontSize(10).text(`  Descrição: ${item.descricao}`);
         doc.moveDown(0.5);
     });
 
     doc.end();
 };
 
+export const getHorarios = async (req, res) => {
+    const { especialidade } = req.query;
+    let resultado = disponibilidades;
+
+    if (especialidade) {
+        resultado = disponibilidades.filter(d => d.especialidade === especialidade);
+    }
+
+    return res.json(resultado);
+};
+
+export const criarAgendamento = async (req, res) => {
+    const { profissional_id, data, hora, especialidade } = req.body;
+
+    if (!profissional_id || !data || !hora || !especialidade) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    const novoAgendamento = {
+        id: `a${agendamentos.length + 1}`,
+        aluno_id: "1",
+        profissional_id,
+        especialidade,
+        data,
+        hora,
+        status: "Pendente"
+    };
+
+    agendamentos.push(novoAgendamento);
+    return res.status(201).json({ message: "Agendamento criado com sucesso.", agendamento: novoAgendamento });
+};
+
+export const salvarDisponibilidade = async (req, res) => {
+    const { especialidade, data, horarios } = req.body;
+
+    if (!especialidade || !data || !horarios || !horarios.length) {
+        return res.status(400).json({ error: "Especialidade, data e horários são obrigatórios." });
+    }
+
+    const novaDisponibilidade = {
+        id: `d${disponibilidades.length + 1}`,
+        profissional_id: "2",
+        especialidade,
+        data,
+        horarios
+    };
+
+    disponibilidades.push(novaDisponibilidade);
+    return res.status(201).json({ message: "Disponibilidade salva com sucesso.", disponibilidade: novaDisponibilidade });
+};
