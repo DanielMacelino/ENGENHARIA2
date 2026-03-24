@@ -27,7 +27,7 @@
             </div>
         </div>
         <div>
-            <a href="/" class="btn-header-sair">Sair &#x21e8;</a>
+            <a href="/login" class="btn-header-sair">Sair &#x21e8;</a>
         </div>
     </header>
 
@@ -74,6 +74,12 @@
                     </table>
                 </div>
             </div>
+            
+            <div style="text-align: right; margin-top: 15px;">
+                <button onclick="exportarPFD()" class="btn-green" style="background-color:#555;">
+                    &#x1f4c4; Gerar Relatório PDF
+                </button>
+            </div>
 
             <div class="page-header" style="margin-top: 40px;">
                 <h2 class="page-title">Relatório Rápido</h2>
@@ -82,15 +88,15 @@
             <div class="stats-grid">
                 <div class="stat-box">
                     <span>Atendidos hoje</span>
-                    <strong>0</strong>
+                    <strong id="stat-atendidos">0</strong>
                 </div>
                 <div class="stat-box">
                     <span>Aguardando</span>
-                    <strong>0</strong>
+                    <strong id="stat-aguardando">0</strong>
                 </div>
                 <div class="stat-box">
-                    <span>Faltas</span>
-                    <strong>0</strong>
+                    <span>Faltas / Outros</span>
+                    <strong id="stat-faltas">0</strong>
                 </div>
             </div>
 

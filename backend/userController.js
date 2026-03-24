@@ -7,14 +7,14 @@ const JWT_SECRET = "ifce_posto_saude_secret";
 // Requisito H: Todos os dados mockados em arrays
 const usuarios = [
     { id: "1", email: "aluno@ifce.edu.br", senha: "123456", tipo_usuario: "aluno", nome: "Aluno Teste" },
-    { id: "1", email: "aluno@ifce.br", senha: "123456", tipo_usuario: "aluno", nome: "Aluno Teste" },
+    { id: "3", email: "aluno@ifce.br", senha: "123456", tipo_usuario: "aluno", nome: "Aluno Teste" },
     { id: "2", email: "prof@ifce.edu.br", senha: "123456", tipo_usuario: "profissional", nome: "Dr. Profissional Teste" }
 ];
 
 const itens = [
     { id: "1", nome: "Consulta Clínica", codigo: "CC001", descricao: "Atendimento geral" },
     { id: "2", nome: "Limpeza Dental", codigo: "LD002", descricao: "Procedimento odontológico" },
-    { id: "3", nome: "Acompanhamento Psicológico", codigo: "AP003", descricao: "Sessão de terapia" }
+    { id: "4", nome: "Acompanhamento Psicológico", codigo: "AP003", descricao: "Sessão de terapia" }
 ];
 
 // Dados Extras para manter o frontend atual funcionando (Dashboard)
@@ -65,12 +65,18 @@ export const getItens = (req, res) => {
 };
 
 // Requisito C: Rota POST para inserir novo item
-export const criarItem = (req, res) => {
+export const criarItem = async (req, res) => {
     const { nome, codigo, descricao } = req.body;
     if (!nome || !codigo) return res.status(400).json({ error: "Nome e código são obrigatórios" });
 
-    const novo = { id: String(itens.length + 1), nome, codigo, descricao };
+    // Inserção no Supabase para manter consistência com search/delete
+    const { data, error } = await supabase.from("itens").insert([{ nome, codigo, descricao }]).select();
+    
+    // Fallback para o mock local (Requisito H)
+    const novo = { id: data ? data[0].id : String(itens.length + 1), nome, codigo, descricao };
     itens.push(novo);
+
+    if (error) return res.status(500).json(error);
     return res.status(201).json(novo);
 };
 
@@ -107,13 +113,21 @@ export const getHorariosMock = (req, res) => {
 };
 
 // Requisito G: Gerar PDF
-// Requisito G: Gerar PDF
 export const generatePDF = (req, res) => {
     const doc = new PDFDocument();
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=relatorio.pdf');
     doc.pipe(res);
-    doc.fontSize(20).text("Relatório de Itens", { align: 'center' });
+    doc.fontSize(20).text("Relatório de Itens do Sistema", { align: 'center' });
+    doc.moveDown();
+
+    // Listagem real dos itens no PDF
+    itens.forEach(item => {
+        doc.fontSize(12).text(`- ${item.nome} (Código: ${item.codigo})`);
+        if(item.descricao) doc.fontSize(10).text(`  Descrição: ${item.descricao}`);
+        doc.moveDown(0.5);
+    });
+
     doc.end();
 };
-
+

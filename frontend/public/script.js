@@ -80,7 +80,7 @@ async function carregarDashboardProfissional() {
     // Dados Mock para o Seminário
     const pacientes = [
         { nome: "Daniel Macelino", hora: "08:20", motivo: "Limpeza Geral", status: "Aguardando" },
-        { nome: "Vitoria Rodrigues", hora: "09:00", motivo: "Consulta de Rotina", status: "Confirmado" },
+        { nome: "Vitoria Rodrigues", hora: "09:00", motivo: "Consulta de Rotina", status: "Atendido" },
         { nome: "Alexandre Silva", hora: "09:40", motivo: "Avaliação Siso", status: "Em Atendimento" }
     ];
 
@@ -99,6 +99,11 @@ async function carregarDashboardProfissional() {
             `;
             tbody.appendChild(tr);
         });
+
+        // Atualiza os stats
+        if (document.getElementById('stat-atendidos')) document.getElementById('stat-atendidos').innerText = "1";
+        if (document.getElementById('stat-aguardando')) document.getElementById('stat-aguardando').innerText = "1";
+        if (document.getElementById('stat-faltas')) document.getElementById('stat-faltas').innerText = "1"; // Em atendimento / faltas
     }, 500);
 }
 
