@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import PDFDocument from "pdfkit";
+import supabase from "./supabaseClient.js";
 
 const JWT_SECRET = "ifce_posto_saude_secret";
 
@@ -74,21 +75,23 @@ export const criarItem = (req, res) => {
 };
 
 // Requisito D: Rota DELETE para excluir um item
-export const deletarItem = (req, res) => {
+export const deleteItem = async (req, res) => {
     const { id } = req.params;
-    const index = itens.findIndex(i => i.id === id || i.codigo === id);
-    if (index === -1) return res.status(404).json({ error: "Item não encontrado" });
-
-    itens.splice(index, 1);
-    return res.json({ message: "Item excluído com sucesso." });
+    const { error } = await supabase.from("itens").delete().eq("id", id);
+    if (error) return res.status(500).json(error);
+    res.json({ message: "Item removido com sucesso" });
 };
 
 // Requisito F: Rota GET pesquisar item pelo código
-export const pesquisarItem = (req, res) => {
+export const getItems = async (req, res) => {
     const { codigo } = req.params;
-    const item = itens.find(i => i.codigo === codigo || i.id === codigo);
-    if (!item) return res.status(404).json({ error: "Item não encontrado" });
-    return res.json(item);
+    let query = supabase.from("itens").select("*");
+
+    if (codigo) query = query.eq("codigo", codigo);
+
+    const { data, error } = await query;
+    if (error) return res.status(500).json(error);
+    res.json(data);
 };
 
 // Requisito F (extra): GET logs por data
@@ -104,22 +107,13 @@ export const getHorariosMock = (req, res) => {
 };
 
 // Requisito G: Gerar PDF
-export const gerarPDF = (req, res) => {
+// Requisito G: Gerar PDF
+export const generatePDF = (req, res) => {
     const doc = new PDFDocument();
-    let filename = "relatorio_itens.pdf";
-    
-    res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"');
-    res.setHeader('Content-type', 'application/pdf');
-
-    doc.fontSize(20).text('Relatório de Itens do Sistema', { align: 'center' });
-    doc.moveDown();
-
-    itens.forEach(item => {
-        doc.fontSize(12).text(`Código: ${item.codigo} - Nome: ${item.nome}`);
-        doc.text(`Descrição: ${item.descricao || 'N/A'}`);
-        doc.moveDown(0.5);
-    });
-
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=relatorio.pdf');
     doc.pipe(res);
+    doc.fontSize(20).text("Relatório de Itens", { align: 'center' });
     doc.end();
-};
+};
+

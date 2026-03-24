@@ -17,8 +17,8 @@ router.use(workingDaysOnly);
 // Requisitos B, C, D, F relativos a 'itens'
 router.get("/itens", Controller.getItens); // B
 router.post("/itens", Controller.criarItem); // C
-router.delete("/itens/:id", Controller.deletarItem); // D
-router.get("/itens/:codigo", Controller.pesquisarItem); // F
+router.delete("/itens/:id", Controller.deleteItem); // D
+router.get("/itens/:codigo", Controller.getItems); // F
 
 // Alias para o frontend (dashboard)
 router.get("/profissionais/horarios", Controller.getHorariosMock);
@@ -27,6 +27,6 @@ router.get("/profissionais/horarios", Controller.getHorariosMock);
 router.get("/logs/:data", Controller.getLogsPorData);
 
 // Requisito G: Rota GET gera PDF para download
-router.get("/relatorio", Controller.gerarPDF);
+router.get("/relatorio", Controller.generatePDF);
 
 export default router;
