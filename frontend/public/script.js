@@ -38,7 +38,7 @@ async function fazerLogin(event) {
             if (data.tipo_usuario === 'aluno') {
                 window.location.href = '/aluno/dashboard';
             } else {
-                window.location.href = '/profissional/disponibilidade';
+                window.location.href = '/profissional/dashboard';
             }
         } else {
             alert(data.error || 'Credenciais inválidas.');
@@ -49,6 +49,174 @@ async function fazerLogin(event) {
         alert('Erro ao conectar com o servidor.');
         if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
     }
+}
+
+/** =========================================================
+ * CADASTRO
+ * ========================================================= */
+async function realizarCadastro(event) {
+    if (event) event.preventDefault();
+    const nome = document.getElementById('nome').value;
+    const email = document.getElementById('email').value;
+    const tipo = document.getElementById('tipo_usuario').value;
+    const senha = document.getElementById('senha').value;
+    const confirma = document.getElementById('confirmar_senha').value;
+
+    if (senha !== confirma) {
+        return alert("As senhas não conferem!");
+    }
+
+    alert(`Simulando cadastro de ${nome} como ${tipo}. Redirecionando para login...`);
+    window.location.href = '/';
+}
+
+/** =========================================================
+ * DASHBOARD PROFISSIONAL
+ * ========================================================= */
+async function carregarDashboardProfissional() {
+    const tbody = document.getElementById('lista-pacientes-hoje');
+    if (!tbody) return;
+
+    // Dados Mock para o Seminário
+    const pacientes = [
+        { nome: "Daniel Macelino", hora: "08:20", motivo: "Limpeza Geral", status: "Aguardando" },
+        { nome: "Vitoria Rodrigues", hora: "09:00", motivo: "Consulta de Rotina", status: "Confirmado" },
+        { nome: "Alexandre Silva", hora: "09:40", motivo: "Avaliação Siso", status: "Em Atendimento" }
+    ];
+
+    setTimeout(() => {
+        tbody.innerHTML = '';
+        pacientes.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.nome}</td>
+                <td>${p.hora}</td>
+                <td>${p.motivo}</td>
+                <td><span class="badge active">${p.status}</span></td>
+                <td>
+                    <button class="btn-green" style="padding: 2px 8px; font-size: 0.8rem;">Atender</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }, 500);
+}
+
+/** =========================================================
+ * GERENCIAMENTO DE ITENS (ADM)
+ * ========================================================= */
+async function carregarItens() {
+    const tbody = document.getElementById('tabela-itens');
+    if (!tbody) return;
+
+    try {
+        const response = await fetch(`${API_URL}/itens`);
+        const itens = await response.json();
+
+        const totalSpan = document.getElementById('total-itens');
+        if (totalSpan) totalSpan.innerText = itens.length;
+
+        tbody.innerHTML = '';
+        itens.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.codigo}</td>
+                <td>${item.nome}</td>
+                <td>Móveis</td>
+                <td>1</td>
+                <td><span class="badge active">Disponível</span></td>
+                <td>
+                    <button onclick="deletarItem('${item.id}')" style="background:none; border:none; cursor:pointer;" title="Remover">&#x1f5d1;</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar itens:', error);
+    }
+}
+
+async function deletarItem(id) {
+    if (!confirm("Deseja realmente excluir este item?")) return;
+
+    try {
+        const response = await fetch(`${API_URL}/itens/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            alert("Item removido com sucesso!");
+            carregarItens();
+        } else {
+            alert("Erro ao remover item.");
+        }
+    } catch (error) {
+        console.error('Erro ao deletar:', error);
+    }
+}
+
+async function salvarNovoItem(event) {
+    if (event) event.preventDefault();
+    const nome = document.getElementById('nomeItem').value;
+    const codigo = "INV" + Math.floor(Math.random() * 1000);
+    const descricao = document.getElementById('obsItem').value;
+
+    try {
+        const response = await fetch(`${API_URL}/itens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome, codigo, descricao })
+        });
+
+        if (response.ok) {
+            alert("Item cadastrado com sucesso!");
+            window.location.href = '/itens';
+        } else {
+            alert("Erro ao cadastrar.");
+        }
+    } catch (error) {
+        console.error('Erro ao salvar item:', error);
+    }
+}
+
+/** =========================================================
+ * LOGS E PDF
+ * ========================================================= */
+async function carregarLogs() {
+    const tbody = document.getElementById('tabela-logs');
+    if (!tbody) return;
+
+    const data = document.getElementById('dataFiltro')?.value || new Date().toISOString().split('T')[0];
+
+    try {
+        const response = await fetch(`${API_URL}/logs/${data}`);
+        const logs = await response.json();
+
+        tbody.innerHTML = '';
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">Nenhum log encontrado para esta data.</td></tr>';
+            return;
+        }
+
+        logs.forEach(log => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${log.data} ${log.horario}</td>
+                <td>Anônimo / Sistema</td>
+                <td>${log.metodo}</td>
+                <td>Acesso à rota: ${log.rota}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar logs:', error);
+    }
+}
+
+function filtrarLogs() {
+    carregarLogs();
+}
+
+function exportarPFD() {
+    // Redireciona para a rota que gera o PDF
+    window.location.href = `${API_URL}/relatorio`;
 }
 
 /** =========================================================

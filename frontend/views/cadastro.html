@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Agenda IFCE</title>
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+
+<body>
+
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <div style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Sistema de Agendamento - Posto de Saúde</h1>
+                <h2>Instituto Federal de Educação, Ciência e Tecnologia do Ceará - Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <a href="/" style="color: white; font-size: 0.9rem; text-decoration: none; font-weight: bold;">Já tenho conta? Entrar</a>
+        </div>
+    </header>
+
+    <div class="login-body">
+        <div class="login-card" style="max-width: 450px;">
+            <div class="login-logo">
+                <span style="color:var(--green-primary); font-size: 1.8rem;">Crie sua Conta</span>
+            </div>
+
+            <form id="form-cadastro" class="login-form" onsubmit="realizarCadastro(event)">
+                <div class="form-group">
+                    <input type="text" id="nome" placeholder="Nome Completo" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="email" placeholder="E-mail (Institucional preferencialmente)" required>
+                </div>
+                <div class="form-group">
+                    <select id="tipo_usuario" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-top: 5px;">
+                        <option value="">Você é...</option>
+                        <option value="aluno">Aluno / Usuário</option>
+                        <option value="profissional">Profissional de Saúde</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="senha" placeholder="Crie uma Senha" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="confirmar_senha" placeholder="Confirme a Senha" required>
+                </div>
+
+                <div style="margin-top: 15px; margin-bottom: 20px;">
+                    <button type="submit" class="btn-green" style="width: 100%; border-radius: 20px;">Cadastrar</button>
+                </div>
+            </form>
+
+            <div style="font-size:0.85rem; color:#666; text-align:center;">
+                Ao se cadastrar, você concorda com os <a href="#" style="color:blue; text-decoration:none;">Termos de Uso</a>.
+            </div>
+        </div>
+    </div>
+
+    <script src="/public/script.js"></script>
+</body>
+
+</html>

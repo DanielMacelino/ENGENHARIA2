@@ -31,6 +31,26 @@ app.get("/profissional/disponibilidade", (req, res) => {
     res.sendFile(path.join(__dirname, "../../frontend/views/profissional-disponibilidade.html"));
 });
 
+app.get("/profissional/dashboard", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../frontend/views/profissional-dashboard.html"));
+});
+
+app.get("/itens", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../frontend/views/itens.html"));
+});
+
+app.get("/criar-item", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../frontend/views/criar-item.html"));
+});
+
+app.get("/logs", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../frontend/views/logs.html"));
+});
+
+app.get("/cadastro", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../frontend/views/cadastro.html"));
+});
+
 app.use("/", router);
 
 app.listen(3000, () => {
