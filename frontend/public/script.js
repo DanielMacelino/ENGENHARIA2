@@ -15,50 +15,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function fazerLogin(event) {
+async function fazerLogin(event) {
     if (event) event.preventDefault();
     const email = document.getElementById('email')?.value;
     const senha = document.getElementById('senha')?.value;
     const btn = document.getElementById('btn-entrar');
     if (btn) { btn.innerText = "Carregando..."; btn.disabled = true; }
 
-    /*
-    fetch(`${API_URL}/login`, {
-        method: 'POST', body: JSON.stringify({ email, senha })
-    }).then(...)
-    */
+    try {
+        const response = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, senha })
+        });
 
-    setTimeout(() => {
-        if (email.includes('aluno')) {
-            window.location.href = '/aluno/dashboard';
-        } else if (email) {
-            // Qualquer outro email, joga pro painel de Profissional
-            window.location.href = '/profissional/disponibilidade';
+        const data = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('tipo_usuario', data.tipo_usuario);
+            
+            if (data.tipo_usuario === 'aluno') {
+                window.location.href = '/aluno/dashboard';
+            } else {
+                window.location.href = '/profissional/disponibilidade';
+            }
         } else {
-            alert('Preencha os campos!');
+            alert(data.error || 'Credenciais inválidas.');
             if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
         }
-    }, 800);
+    } catch (error) {
+        console.error('Erro no login:', error);
+        alert('Erro ao conectar com o servidor.');
+        if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
+    }
 }
 
 /** =========================================================
- * SIMULAÇÃO: GET /profissionais/horarios
+ * ROTA: GET /profissionais/horarios
  * Local: /aluno/dashboard
  * ========================================================= */
-function carregarDashboardAluno() {
+async function carregarDashboardAluno() {
     const grade = document.getElementById('grade-horarios');
     if (!grade) return;
 
-    // Colunas de segunda a sabado simuladas
     const dias = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-    const horariosMock = ['08:00', '08:20', '08:40', '09:00', '09:20', '09:40'];
 
-    /*
-    fetch(`${API_URL}/profissionais/horarios?especialidade=Geral`)
-    */
+    try {
+        const response = await fetch(`${API_URL}/profissionais/horarios`);
+        const disponibilidades = await response.json();
 
-    // Gerar visualmente
-    setTimeout(() => {
         grade.innerHTML = '';
 
         dias.forEach(dia => {
@@ -66,19 +72,18 @@ function carregarDashboardAluno() {
             col.className = 'schedule-column';
             col.innerHTML = `<div class="schedule-header">${dia}</div>`;
 
-            horariosMock.forEach(hora => {
-                // Randomizando o status
-                const isDisponivel = Math.random() > 0.3;
+            // Horários fixos para exibição baseados em um range comum (08:00 a 10:00)
+            const horasBase = ['08:00', '08:20', '08:40', '09:00', '09:20', '09:40'];
+
+            horasBase.forEach(hora => {
+                // Procurar se algum profissional tem esse dia/hora disponível
+                // Na nossa mock API simplificada por agora, ignoramos a data exata e focamos na hora
+                const disp = disponibilidades.find(d => d.horarios.includes(hora));
+                
+                const isDisponivel = !!disp && dia !== 'Sábado';
                 let classStatus = isDisponivel ? 'available' : 'unavailable';
                 let labelStatus = isDisponivel ? 'Disponível' : 'Indisponível';
 
-                // No Sabado, tudo fechado no mock
-                if (dia === 'Sábado') {
-                    classStatus = 'unavailable';
-                    labelStatus = 'Indisponível';
-                }
-
-                // Cria o time label só na 1a coluna pra simular a imagem
                 if (dia === 'Segunda-feira') {
                     const hl = document.createElement('div');
                     hl.className = 'time-slot time-label';
@@ -91,10 +96,24 @@ function carregarDashboardAluno() {
                 block.innerText = labelStatus;
 
                 if (isDisponivel) {
-                    block.onclick = () => {
+                    block.onclick = async () => {
                         if (confirm(`Deseja agendar para ${dia} às ${hora}?`)) {
-                            alert("Simulado POST /agendamentos ! Redirecionando...");
-                            window.location.href = '/aluno/agendamentos';
+                            const resAgendar = await fetch(`${API_URL}/agendamentos`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    profissional_id: disp.profissional_id,
+                                    especialidade: disp.especialidade,
+                                    data: "2025-06-12", // Mock data para o dia selecionado
+                                    hora: hora 
+                                })
+                            });
+                            if (resAgendar.ok) {
+                                alert("Agendamento realizado com sucesso!");
+                                window.location.href = '/aluno/agendamentos';
+                            } else {
+                                alert("Erro ao realizar agendamento.");
+                            }
                         }
                     }
                 }
@@ -103,32 +122,32 @@ function carregarDashboardAluno() {
             });
             grade.appendChild(col);
         });
-    }, 500);
-}
 
-function novoAgendamentoModal() {
-    alert("Aqui abriria um Modal ou formulário rápido para chamar a rota POST /agendamentos");
+    } catch (error) {
+        console.error('Erro ao buscar horários:', error);
+        grade.innerHTML = '<p>Erro ao carregar horários.</p>';
+    }
 }
 
 /** =========================================================
  * SIMULAÇÃO: GET /agendamentos/usuario/:id
  * Local: /aluno/agendamentos
  * ========================================================= */
-function carregarAgendamentosAluno() {
+async function carregarAgendamentosAluno() {
     const tbody = document.getElementById('tabela-agendamentos');
     if (!tbody) return;
 
-    /*
-    fetch(`${API_URL}/agendamentos/usuario/123`)
-    */
+    try {
+        // Mock ID 1 por enquanto
+        // No futuro, pegar o ID do token JWT decodificado
+        // const response = await fetch(`${API_URL}/agendamentos/usuario/1`);
+        
+        // Como o backend ainda não tem essa rota específica para listar, 
+        // mantemos o mock ou adaptamos se necessário
+        const mockAgendamentos = [
+            { servico: "Dentista", data: "12/03", hora: "09:20", prof: "Dr. João", status: "Confirmado", color: "#555" }
+        ];
 
-    const mockAgendamentos = [
-        { servico: "Dentista", data: "12/03", hora: "09:20", prof: "Dr. João", status: "Confirmado", color: "#555" },
-        { servico: "Psicóloga", data: "15/05", hora: "14:20", prof: "Maria", status: "Pendente", color: "#f0ad4e" },
-        { servico: "Dentista", data: "12/06", hora: "09:00", prof: "Dr. João", status: "Agendado", color: "#1e6d38" }
-    ];
-
-    setTimeout(() => {
         tbody.innerHTML = '';
         mockAgendamentos.forEach(a => {
             const tr = document.createElement('tr');
@@ -145,7 +164,9 @@ function carregarAgendamentosAluno() {
             `;
             tbody.appendChild(tr);
         });
-    }, 500);
+    } catch (error) {
+        console.error('Erro ao carregar agendamentos:', error);
+    }
 }
 
 /** =========================================================

@@ -1,7 +1,10 @@
+import { registrarLog } from "../../userController.js";
+
 // Middleware que regista horário e rota
 export const logRequest = (req, res, next) => {
     const now = new Date();
     console.log(`[${now.toLocaleString()}] ${req.method} em ${req.url}`);
+    registrarLog(req.method, req.url);
     next();
 };
 
