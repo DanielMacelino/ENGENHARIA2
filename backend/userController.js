@@ -1,62 +1,115 @@
-import supabase from "../supabaseClient.js"
 import jwt from "jsonwebtoken";
-import PDFDocument from "pdfkit";
 
-export async function getUsers() {
-const { data, error } = await supabase
-    .from("users")
-    .select("*")
+const JWT_SECRET = "ifce_posto_saude_secret";
 
-if (error) {
-    throw error
-}
-return data
-}
+const usuarios = [
+    { id: "1", email: "aluno@ifce.edu.br", senha: "123456", tipo_usuario: "aluno", nome: "Aluno Teste" },
+    { id: "2", email: "prof@ifce.edu.br", senha: "123456", tipo_usuario: "profissional", nome: "Dr. Profissional Teste" }
+];
 
-// POST /logar
+const disponibilidades = [
+    {
+        id: "d1",
+        profissional_id: "2",
+        especialidade: "Geral",
+        data: "2025-06-10",
+        horarios: ["08:00", "08:20", "08:40", "09:00", "09:20"]
+    },
+    {
+        id: "d2",
+        profissional_id: "2",
+        especialidade: "Dentista",
+        data: "2025-06-11",
+        horarios: ["09:00", "09:20", "09:40"]
+    }
+];
+
+const agendamentos = [
+    {
+        id: "a1",
+        aluno_id: "1",
+        profissional_id: "2",
+        especialidade: "Dentista",
+        data: "2025-06-12",
+        hora: "09:00",
+        status: "Confirmado"
+    }
+];
+
+// Código Principal
+
 export const login = async (req, res) => {
     const { email, senha } = req.body;
-    // Simulação de validação (No Supabase real usa o auth.signInWithPassword)
-    if (email === "aluno@ifce.br" && senha === "123456") {
-        const token = jwt.sign({ email }, "SECRET_KEY", { expiresIn: '1h' });
-        return res.json({ token });
+
+    if (!email || !senha) {
+        return res.status(400).json({ error: "Email e senha são obrigatórios." });
     }
-    res.status(401).json({ error: "Credenciais inválidas" });
+
+    const usuario = usuarios.find(u => u.email === email && u.senha === senha);
+
+    if (!usuario) {
+        return res.status(401).json({ error: "Credenciais inválidas." });
+    }
+
+    const token = jwt.sign(
+        { id: usuario.id, email: usuario.email, tipo_usuario: usuario.tipo_usuario },
+        JWT_SECRET,
+        { expiresIn: "1h" }
+    );
+
+    return res.json({ token, tipo_usuario: usuario.tipo_usuario });
 };
 
-// GET /itens e busca por código
-export const getItems = async (req, res) => {
-    const { codigo } = req.params;
-    let query = supabase.from("itens").select("*");
-    
-    if (codigo) query = query.eq("codigo", codigo);
+export const getHorarios = async (req, res) => {
+    const { especialidade } = req.query;
 
-    const { data, error } = await query;
-    if (error) return res.status(500).json(error);
-    res.json(data);
+    let resultado = disponibilidades;
+
+    if (especialidade) {
+        resultado = disponibilidades.filter(d => d.especialidade === especialidade);
+    }
+
+    return res.json(resultado);
 };
 
-// POST /itens
-export const createItem = async (req, res) => {
-    const { data, error } = await supabase.from("itens").insert([req.body]);
-    if (error) return res.status(500).json(error);
-    res.status(201).json(data);
+export const criarAgendamento = async (req, res) => {
+    const { profissional_id, data, hora, especialidade } = req.body;
+
+    if (!profissional_id || !data || !hora || !especialidade) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    const novoAgendamento = {
+        id: `a${agendamentos.length + 1}`,
+        aluno_id: "1",
+        profissional_id,
+        especialidade,
+        data,
+        hora,
+        status: "Pendente"
+    };
+
+    agendamentos.push(novoAgendamento);
+
+    return res.status(201).json({ message: "Agendamento criado com sucesso.", agendamento: novoAgendamento });
 };
 
-// DELETE /itens/:id
-export const deleteItem = async (req, res) => {
-    const { id } = req.params;
-    const { error } = await supabase.from("itens").delete().eq("id", id);
-    if (error) return res.status(500).json(error);
-    res.json({ message: "Item removido com sucesso" });
-};
+export const salvarDisponibilidade = async (req, res) => {
+    const { especialidade, data, horarios } = req.body;
 
-// GET /itens/pdf
-export const generatePDF = (req, res) => {
-    const doc = new PDFDocument();
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=relatorio.pdf');
-    doc.pipe(res);
-    doc.fontSize(20).text("Relatório de Itens", { align: 'center' });
-    doc.end();
+    if (!especialidade || !data || !horarios || !horarios.length) {
+        return res.status(400).json({ error: "Especialidade, data e horários são obrigatórios." });
+    }
+
+    const novaDisponibilidade = {
+        id: `d${disponibilidades.length + 1}`,
+        profissional_id: "2",
+        especialidade,
+        data,
+        horarios
+    };
+
+    disponibilidades.push(novaDisponibilidade);
+
+    return res.status(201).json({ message: "Disponibilidade salva com sucesso.", disponibilidade: novaDisponibilidade });
 };
