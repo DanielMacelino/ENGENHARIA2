@@ -276,6 +276,80 @@ export const criarAgendamento = async (req, res) => {
 };
 
 // =====================================================
+// GET AGENDAMENTOS DO USUÁRIO - Lista agendamentos do aluno
+// =====================================================
+export const getAgendamentosUsuario = async (req, res) => {
+    const { usuario_id } = req.params;
+
+    if (!usuario_id) {
+        return res.status(400).json({ error: "ID do usuário é obrigatório." });
+    }
+
+    try {
+        const { data: agendamentos, error } = await supabase
+            .from("agendamentos")
+            .select(`
+                id,
+                data,
+                hora,
+                especialidade,
+                status,
+                usuarios!agendamentos_profissional_id_fkey (
+                    nome
+                )
+            `)
+            .eq("usuario_id", usuario_id)
+            .order("data", { ascending: false });
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        return res.json(agendamentos || []);
+    } catch (err) {
+        return res.status(500).json({ error: "Erro ao buscar agendamentos." });
+    }
+};
+
+// =====================================================
+// GET AGENDAMENTOS PROFISSIONAL - Lista pacientes para atender hoje
+// =====================================================
+export const getAgendamentosProfissional = async (req, res) => {
+    const { profissional_id } = req.params;
+
+    if (!profissional_id) {
+        return res.status(400).json({ error: "ID do profissional é obrigatório." });
+    }
+
+    try {
+        const hoje = new Date().toISOString().split('T')[0];
+
+        const { data: agendamentos, error } = await supabase
+            .from("agendamentos")
+            .select(`
+                id,
+                hora,
+                especialidade,
+                status,
+                usuarios!agendamentos_usuario_id_fkey (
+                    nome
+                )
+            `)
+            .eq("profissional_id", profissional_id)
+            .eq("data", hoje)
+            .order("hora", { ascending: true });
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        return res.json(agendamentos || []);
+    } catch (err) {
+        return res.status(500).json({ error: "Erro ao buscar agendamentos do profissional." });
+    }
+};
+
+// =====================================================
 // SALVAR DISPONIBILIDADE - Define horários do profissional
 // =====================================================
 export const salvarDisponibilidade = async (req, res) => {

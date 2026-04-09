@@ -15,6 +15,8 @@ router.get("/itens/:codigo", Controller.getItems);
 router.get("/logs/:data", Controller.getLogsPorData);
 router.get("/relatorio", Controller.generatePDF);
 router.get("/profissionais/horarios", Controller.getHorarios);
+router.get("/agendamentos/usuario/:usuario_id", Controller.getAgendamentosUsuario);
+router.get("/agendamentos/profissional/:profissional_id", Controller.getAgendamentosProfissional);
 router.post("/agendamentos", Controller.criarAgendamento);
 router.post("/disponibilidade", Controller.salvarDisponibilidade);
 

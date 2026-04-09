@@ -30,6 +30,10 @@ app.get("/aluno/agendamentos", (req, res) => {
     res.sendFile(path.join(views, "aluno-agendamentos.html"));
 });
 
+app.get("/profissional/dashboard", (req, res) => {
+    res.sendFile(path.join(views, "profissional-dashboard.html"));
+});
+
 app.get("/profissional/disponibilidade", (req, res) => {
     res.sendFile(path.join(views, "profissional-disponibilidade.html"));
 });
