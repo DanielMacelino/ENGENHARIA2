@@ -37,20 +37,7 @@
     </header>
 
     <div class="main-wrapper">
-        <!-- Menu Lateral Direita/Esquerda -->
-        <aside class="sidebar">
-            <div class="sidebar-profile">
-                <p>Olá, Administrador. Tudo bem?</p>
-                <strong>IFCE | Campus - Crato</strong>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="/itens"><span style="color:var(--green-light)">&#x2714;</span> Home</a></li>
-                <li><a href="/itens" class="active"><span style="color:gray;">&#x1f4ca;</span> Lista de Itens</a></li>
-                <li><a href="/criar-item"><span style="color:gray;">&#x2795;</span> Cadastrar Item</a></li>
-                <li><a href="/logs"><span style="color:gray;">&#x1f4dc;</span> Logs e Relatórios</a></li>
-                <li><a href="#"><span style="color:gray;">&#x2139;</span> Sobre</a></li>
-            </ul>
-        </aside>
+        <aside id="sidebar-container" class="sidebar"></aside>
 
         <!-- Área de Conteúdo -->
         <main class="content-area">
@@ -60,6 +47,15 @@
                 <a href="/criar-item" class="btn-green" style="font-size: 0.9rem; padding: 8px 15px;">+ Novo Item</a>
             </div>
             <p class="page-subtitle">Visão geral do sistema de gerenciamento de itens do Campus.</p>
+
+            <div class="card">
+                <h3 style="margin-bottom: 15px; color: #444;">Pesquisar por Código</h3>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="searchItem" placeholder="Ex: INV123" style="padding:8px; border:1px solid #ccc; border-radius:5px; flex:1;">
+                    <button onclick="pesquisarItem()" class="btn-green">Buscar</button>
+                    <button onclick="carregarItens()" class="btn-green" style="background-color:#eee; color:#333; border:1px solid #ccc;">Limpar</button>
+                </div>
+            </div>
 
             <div class="card">
                 <h3 style="margin-bottom: 15px; color: #444;">Resumo</h3>

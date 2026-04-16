@@ -53,11 +53,13 @@
 
             <!-- Formulário que chamará a API: POST /login -->
             <form id="form-login" class="login-form">
-                <div>
-                    <input type="email" id="email" placeholder="Email (use aluno@ifce.br ou outro)" required>
-                </div>
-                <div>
-                    <input type="password" id="senha" placeholder="Senha" required>
+                <div id="login-step-1">
+                    <div>
+                        <input type="email" id="email" placeholder="Email (use aluno@ifce.br ou outro)" required>
+                    </div>
+                    <div>
+                        <input type="password" id="senha" placeholder="Senha" required>
+                    </div>
                 </div>
 
                 <div
@@ -67,11 +69,11 @@
                 </div>
 
                 <button type="submit" class="btn-green" id="btn-entrar"
-                    style="border-radius:20px; width: 150px; margin: 0 auto; justify-content:center;">Entrar</button>
+                    style="border-radius:20px; width: 100%; justify-content:center;">Entrar</button>
             </form>
 
             <div style="margin-top:20px; font-size:0.85rem; color:#666;">
-                Esqueceu a senha? <a href="#" style="color:blue; text-decoration:none;">Redefinir aqui.</a>
+                Esqueceu a senha? <a href="#" onclick="solicitarRecuperacao()" style="color:blue; text-decoration:none;">Redefinir via SMS.</a>
             </div>
         </div>
     </div>

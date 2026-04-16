@@ -33,20 +33,7 @@
     </header>
 
     <div class="main-wrapper">
-        <aside class="sidebar">
-            <div class="sidebar-profile">
-                <p>Olá, Aluno. Tudo bem?</p>
-                <strong>IFCE | Campus - Crato</strong>
-            </div>
-            <ul class="sidebar-menu">
-                <span class="menu-title">Menu</span>
-                <li><a href="/aluno/dashboard" class="active"><span style="color:var(--green-light)">&#x1f3e0;</span>
-                        Home</a></li>
-                <li><a href="#"><span style="color:gray;">&#x1f4da;</span> Informações Acadêmicas</a></li>
-                <li><a href="/aluno/agendamentos"><span style="color:gray;">&#x1f4c5;</span> Agendamentos</a></li>
-                <li><a href="#"><span style="color:gray;">&#x2139;</span> Sobre</a></li>
-            </ul>
-        </aside>
+        <aside id="sidebar-container" class="sidebar"></aside>
 
         <main class="content-area">
 
@@ -57,16 +44,8 @@
             </div>
             <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:20px;">
 
-            <div class="card" style="border-left: 5px solid var(--green-primary); max-width: 400px; padding: 15px;">
-                <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px; color:#444;">
-                    <span style="color:red">&#x1f4cc;</span> Psicólogo
-                </div>
-                <div class="stats-text" style="color:#555;">
-                    &#x1f4c5; <span>04/12/2026 - 14:00</span>
-                </div>
-                <div class="stats-text" style="color:#555;">
-                    &#x1f4cd; Sala 12 - IFCE
-                </div>
+            <div class="card" id="proximo-agendamento-card" style="border-left: 5px solid var(--green-primary); max-width: 400px; padding: 15px;">
+                Carregando próximo agendamento...
             </div>
 
             <div class="page-header"

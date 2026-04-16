@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informações Acadêmicas - Agenda IFCE</title>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+<body style="background-color: #f4f7f6;">
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <div style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Sobre o Sistema de Agendamento</h1>
+                <h2>Eixo de Saúde e Bem-Estar - IFCE Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <button onclick="history.back()" class="btn-header-sair">Voltar</button>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <aside id="sidebar-container" class="sidebar"></aside>
+
+        <main class="content-area">
+            <div class="card" style="padding: 40px;">
+                <h2 style="color: var(--green-primary); margin-bottom: 20px;">O que é o Sistema de Agenda IFCE?</h2>
+                
+                <p style="font-size: 1.1rem; line-height: 1.6; color: #444; margin-bottom: 25px;">
+                    O <strong>Sistema de Agendamento da Enfermaria</strong> é uma plataforma digital desenvolvida para otimizar o atendimento de saúde no <strong>IFCE Campus Crato</strong>. 
+                    Ele atua como o elo principal entre os alunos que necessitam de cuidados e os profissionais residentes (médicos, dentistas, psicólogos e enfermeiros).
+                </p>
+
+                <h3 style="color: #333; margin-top: 30px;">Finalidade Institucional</h3>
+                <ul style="list-style-type: none; padding: 0; margin-top: 15px;">
+                    <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: var(--green-primary); font-size: 1.5rem;">&#x2714;</span>
+                        Organizar o fluxo de atendimento, eliminando filas físicas desnecessárias.
+                    </li>
+                    <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: var(--green-primary); font-size: 1.5rem;">&#x2714;</span>
+                        Garantir privacidade e agilidade no agendamento de consultas psicológicas e médicas.
+                    </li>
+                    <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: var(--green-primary); font-size: 1.5rem;">&#x2714;</span>
+                        Gerenciar o inventário de medicamentos e equipamentos de forma transparente.
+                    </li>
+                    <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: var(--green-primary); font-size: 1.5rem;">&#x2714;</span>
+                        Facilitar o registro de histórico de atendimentos para fins estatísticos acadêmicos.
+                    </li>
+                </ul>
+
+                <div style="background-color: #e8f5e9; padding: 20px; border-radius: 10px; border-left: 5px solid var(--green-primary); margin-top: 40px;">
+                    <p style="font-style: italic; color: #2e7d32;">
+                        "Este site serve como uma ferramenta de bem-estar estudantil, garantindo que a saúde não seja um obstáculo para o sucesso acadêmico dos nossos alunos."
+                    </p>
+                    <strong style="display: block; margin-top: 10px;">- Direção de Extensão IFCE Crato</strong>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/public/script.js"></script>
+</body>
+</html>

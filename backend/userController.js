@@ -1,8 +1,24 @@
 import jwt from "jsonwebtoken";
 import PDFDocument from "pdfkit";
-import { supabase } from "./src/config/supabaseClient.js";
+import crypto from "crypto";
+import { supabase } from "./supabaseClient.js";
 
 const JWT_SECRET = "ifce_posto_saude_secret";
+
+// Função para criptografar senha (Requisito F)
+const hashPassword = (password) => {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+    return `${salt}:${hash}`;
+};
+
+// Função para verificar senha (Requisito F)
+const verifyPassword = (password, storedPassword) => {
+    if (!storedPassword.includes(':')) return password === storedPassword; // Fallback para senhas antigas em texto puro
+    const [salt, hash] = storedPassword.split(':');
+    const verifyHash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+    return hash === verifyHash;
+};
 
 const logsRequisicoes = [];
 
@@ -11,6 +27,36 @@ export const registrarLog = (metodo, rota) => {
     const data = agora.toISOString().split("T")[0];
     const hora = agora.toLocaleTimeString();
     logsRequisicoes.push({ metodo, rota, data, hora });
+};
+
+// =====================================================
+// REGISTRAR USUÁRIO - Novo Cadastro (Requisito F)
+// =====================================================
+export const registrarUsuario = async (req, res) => {
+    const { nome, email, senha, tipo_usuario } = req.body;
+
+    if (!nome || !email || !senha || !tipo_usuario) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    try {
+        const senhaCriptografada = hashPassword(senha);
+
+        const { data: novoUsuario, error } = await supabase
+            .from("usuarios")
+            .insert([{ nome, email, senha: senhaCriptografada, tipo_usuario }])
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === '23505') return res.status(400).json({ error: "E-mail já cadastrado." });
+            return res.status(500).json({ error: error.message });
+        }
+
+        return res.status(201).json({ message: "Usuário cadastrado com sucesso!", id: novoUsuario.id });
+    } catch (err) {
+        return res.status(500).json({ error: "Erro ao realizar cadastro." });
+    }
 };
 
 // =====================================================
@@ -24,24 +70,28 @@ export const login = async (req, res) => {
     }
 
     try {
-        const { data: usuarios, error } = await supabase
+        const { data: usuario, error } = await supabase
             .from("usuarios")
             .select("*")
             .eq("email", email)
-            .eq("senha", senha)
             .single();
 
-        if (error || !usuarios) {
-            return res.status(401).json({ error: "Credenciais inválidas." });
+        if (error || !usuario) {
+            return res.status(401).json({ error: "Usuário não encontrado." });
+        }
+
+        // Verifica a senha criptografada (Requisito F)
+        if (!verifyPassword(senha, usuario.senha)) {
+            return res.status(401).json({ error: "Senha incorreta." });
         }
 
         const token = jwt.sign(
-            { id: usuarios.id, email: usuarios.email, tipo_usuario: usuarios.tipo_usuario },
+            { id: usuario.id, email: usuario.email, tipo_usuario: usuario.tipo_usuario },
             JWT_SECRET,
             { expiresIn: "1h" }
         );
 
-        return res.json({ token, tipo_usuario: usuarios.tipo_usuario });
+        return res.json({ token, id: usuario.id, tipo_usuario: usuario.tipo_usuario, email: usuario.email });
     } catch (err) {
         return res.status(500).json({ error: "Erro ao fazer login." });
     }
@@ -400,3 +450,35 @@ export const salvarDisponibilidade = async (req, res) => {
         return res.status(500).json({ error: "Erro ao salvar disponibilidade." });
     }
 };
+
+// =====================================================
+// ATUALIZAR STATUS AGENDAMENTO - Confirma, Cancela ou Atende
+// =====================================================
+export const atualizarStatusAgendamento = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!id || !status) {
+        return res.status(400).json({ error: "ID e novo status são obrigatórios." });
+    }
+
+    try {
+        const { data: atualizado, error } = await supabase
+            .from("agendamentos")
+            .update({ status })
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        return res.json({ 
+            message: `Status atualizado para ${status}.`, 
+            agendamento: atualizado 
+        });
+    } catch (err) {
+        return res.status(500).json({ error: "Erro ao atualizar agendamento." });
+    }
+};

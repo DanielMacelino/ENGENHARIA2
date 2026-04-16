@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo de Distância e Mapa - Localização IFCE</title>
+    <link rel="stylesheet" href="/public/style.css">
+    
+    <!-- Leaflet CSS e JS para o mapa (OpenStreetMap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        .map-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 20px; }
+        .input-latlong { padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 100%; margin-bottom: 10px; }
+        .btn-calc { background: var(--green-primary); color: #fff; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+        .result-box { margin-top: 20px; padding: 15px; background: #e8f5e9; border-left: 5px solid var(--green-primary); display: none; }
+    </style>
+</head>
+<body style="background-color: #f4f7f6;">
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <div style="width: 25px; height: 35px; background-color: #aae0a4; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px;">
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                    <div style="background-color: var(--green-primary);"></div>
+                </div>
+            </div>
+            <div class="header-titles">
+                <h1>Mapa Estratégico e Distâncias</h1>
+                <h2>Auxílio de Deslocamento e Saúde - IFCE Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <button onclick="history.back()" class="btn-header-sair">Voltar</button>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <aside id="sidebar-container" class="sidebar"></aside>
+
+        <main class="content-area">
+            <div class="map-card" style="margin-top: 0;">
+                <h2 style="color: var(--green-primary); margin-bottom: 20px;">Rede de Apoio e Saúde</h2>
+                
+                <div id="map" style="height: 400px; width: 100%; border-radius: 8px; border: 1px solid #ccc;"></div>
+                
+                <p style="font-size: 0.85rem; color: #666; margin-top: 10px;">Visualização de clínicas e hospitais parceiros do IFCE.</p>
+            </div>
+
+            <div class="map-card">
+                <h2 style="color: var(--green-primary); margin-bottom: 20px;">Calcular Distância</h2>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Selecione dois locais para calcular a distância entre eles.</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <label>Origem (Ponto A):</label>
+                    <select id="coord-a" class="input-latlong">
+                        <option value="-7.230659,-39.413709">IFCE Campus Crato</option>
+                        <option value="-7.228245,-39.410574">Posto de Saúde do Crato (Postinho)</option>
+                        <option value="-7.230099,-39.408595">Hospital São José do Crato</option>
+                        <option value="-7.230731,-39.307469">Hospital Regional do Cariri (HRC)</option>
+                        <option value="-7.232789,-39.411123">Clínica São Lucas</option>
+                        <option value="-7.225456,-39.408091">Clínica Santa Tereza</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label>Destino (Ponto B):</label>
+                    <select id="coord-b" class="input-latlong">
+                        <option value="-7.230659,-39.413709">IFCE Campus Crato</option>
+                        <option value="-7.228245,-39.410574">Posto de Saúde do Crato (Postinho)</option>
+                        <option value="-7.230099,-39.408595" selected>Hospital São José do Crato</option>
+                        <option value="-7.230731,-39.307469">Hospital Regional do Cariri (HRC)</option>
+                        <option value="-7.232789,-39.411123">Clínica São Lucas</option>
+                        <option value="-7.225456,-39.408091">Clínica Santa Tereza</option>
+                    </select>
+                </div>
+
+                <button onclick="calcularDistanciaFrontend()" class="btn-calc">Calcular Distância (km)</button>
+
+                <div id="resultado-distancia" class="result-box">
+                    <strong>Distância calculada:</strong>
+                    <span id="valor-distancia">0</span> km
+                    <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">Cálculo realizado utilizando a fórmula de Haversine.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/public/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Atrasar levemente a renderização do mapa para garantir que a div tem tamanho
+            setTimeout(() => {
+                const map = L.map('map').setView([-7.230659, -39.413709], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+
+                const ifceMarker = L.marker([-7.230659, -39.413709]).addTo(map);
+                ifceMarker.bindPopup('<strong style="color:green;">IFCE Campus Crato</strong><br>Ponto Principal').openPopup();
+
+                L.marker([-7.228245, -39.410574]).addTo(map).bindPopup('<b>Posto de Saúde do Crato (Postinho)</b>');
+                L.marker([-7.230099, -39.408595]).addTo(map).bindPopup('<b>Hospital São José do Crato</b>');
+                L.marker([-7.230731, -39.307469]).addTo(map).bindPopup('<b>Hospital Regional do Cariri (HRC)</b>');
+                L.marker([-7.232789, -39.411123]).addTo(map).bindPopup('<b>Clínica São Lucas</b>');
+                L.marker([-7.225456, -39.408091]).addTo(map).bindPopup('<b>Clínica Santa Tereza</b>');
+                map.invalidateSize();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
