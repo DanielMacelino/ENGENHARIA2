@@ -1,6 +1,7 @@
 import express from "express";
 import * as Controller from "../../userController.js";
 import { logRequest, workingDaysOnly } from "../middlewares/appMiddleware.js";
+import { upload } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -21,5 +22,10 @@ router.get("/agendamentos/profissional/:profissional_id", Controller.getAgendame
 router.post("/agendamentos", Controller.criarAgendamento);
 router.put("/agendamentos/:id/status", Controller.atualizarStatusAgendamento);
 router.post("/disponibilidade", Controller.salvarDisponibilidade);
+
+// Novas rotas (2FA, Upload, Distância)
+router.post("/login/verify", Controller.verificar2FA);
+router.post("/upload", upload.single("imagem"), Controller.uploadImagem);
+router.post("/distancia", Controller.calcularDistancia);
 
 export default router;

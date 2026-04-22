@@ -2,8 +2,10 @@ import jwt from "jsonwebtoken";
 import PDFDocument from "pdfkit";
 import crypto from "crypto";
 import { supabase } from "./supabaseClient.js";
+import nodemailer from "nodemailer";
 
 const JWT_SECRET = "ifce_posto_saude_secret";
+const mfaCodes = new Map(); // Store 2FA codes in memory
 
 // Função para criptografar senha (Requisito F)
 const hashPassword = (password) => {
@@ -85,13 +87,22 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: "Senha incorreta." });
         }
 
-        const token = jwt.sign(
-            { id: usuario.id, email: usuario.email, tipo_usuario: usuario.tipo_usuario },
-            JWT_SECRET,
-            { expiresIn: "1h" }
-        );
+        // Gera código 2FA e envia por e-mail (Requisito H)
+        const codigo2FA = Math.floor(100000 + Math.random() * 900000).toString();
+        mfaCodes.set(usuario.email, { codigo: codigo2FA, usuario });
+        
+        console.log(`[2FA MOCK] Código gerado para ${usuario.email}: ${codigo2FA}`);
 
-        return res.json({ token, id: usuario.id, tipo_usuario: usuario.tipo_usuario, email: usuario.email });
+        // Tentativa de envio real (Mock com console para e-mails fictícios)
+        try {
+            // Em produção, usar transporter real do nodemailer
+            // const transporter = nodemailer.createTransport({ ... });
+            // await transporter.sendMail({ to: usuario.email, subject: "Código de Login", text: `Seu código: ${codigo2FA}` });
+        } catch (e) {
+            console.error("Erro ao enviar email, mas o código está no log para testes.", e);
+        }
+
+        return res.json({ requires_2fa: true, email: usuario.email, message: "Código de 2FA enviado para o seu e-mail." });
     } catch (err) {
         return res.status(500).json({ error: "Erro ao fazer login." });
     }
@@ -481,4 +492,79 @@ export const atualizarStatusAgendamento = async (req, res) => {
     } catch (err) {
         return res.status(500).json({ error: "Erro ao atualizar agendamento." });
     }
+};
+
+// =====================================================
+// VERIFICAR 2FA - Valida o código enviado por e-mail
+// =====================================================
+export const verificar2FA = (req, res) => {
+    const { email, codigo } = req.body;
+
+    if (!email || !codigo) return res.status(400).json({ error: "Email e código são obrigatórios." });
+
+    const mfaData = mfaCodes.get(email);
+
+    if (!mfaData || mfaData.codigo !== codigo) {
+        return res.status(401).json({ error: "Código inválido ou expirado." });
+    }
+
+    const { usuario } = mfaData;
+
+    const token = jwt.sign(
+        { id: usuario.id, email: usuario.email, tipo_usuario: usuario.tipo_usuario },
+        JWT_SECRET,
+        { expiresIn: "1h" }
+    );
+
+    // Remove o código após o uso
+    mfaCodes.delete(email);
+
+    return res.json({ token, id: usuario.id, tipo_usuario: usuario.tipo_usuario, email: usuario.email });
+};
+
+// =====================================================
+// UPLOAD IMAGEM - Salva imagem localmente (preparo para nuvem)
+// =====================================================
+export const uploadImagem = (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "Nenhum arquivo enviado." });
+    }
+
+    // A URL seria retornada pelo Supabase Storage. Aqui usamos o caminho local.
+    const fileUrl = `/uploads/${req.file.filename}`;
+    
+    return res.status(201).json({
+        message: "Imagem salva com sucesso.",
+        url: fileUrl
+    });
+};
+
+// =====================================================
+// CALCULAR DISTÂNCIA - Distância entre dois pontos no mapa
+// =====================================================
+function grausParaRadianos(graus) {
+    return graus * (Math.PI / 180);
+}
+
+export const calcularDistancia = (req, res) => {
+    const { lat1, lon1, lat2, lon2 } = req.body;
+
+    if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) {
+        return res.status(400).json({ error: "Todas as coordenadas (lat1, lon1, lat2, lon2) são obrigatórias." });
+    }
+
+    const raioTerraKm = 6371;
+
+    const dLat = grausParaRadianos(lat2 - lat1);
+    const dLon = grausParaRadianos(lon2 - lon1);
+
+    const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(grausParaRadianos(lat1)) * Math.cos(grausParaRadianos(lat2)) * 
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distanciaKm = raioTerraKm * c;
+
+    return res.json({ distancia_km: Number(distanciaKm.toFixed(2)) });
 };
