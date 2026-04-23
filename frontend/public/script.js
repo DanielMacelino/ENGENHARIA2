@@ -588,3 +588,84 @@ async function exportarPDF(tipo = 'itens') {
         alert('Erro ao conectar com o servidor para baixar o PDF.');
     }
 }
+
+/** =========================================================
+ * CONFIGURAÇÃO DE DISPONIBILIDADE (PROFISSIONAL)
+ * ========================================================= */
+async function carregarSetupProfissional() {
+    const listaHorarios = document.getElementById('lista-horarios-prof');
+    if (!listaHorarios) return;
+
+    // Horários base que podem ser selecionados
+    const horasBase = ['08:00', '08:20', '08:40', '09:00', '09:20', '09:40', '10:00', '10:20', '10:40', '11:00', '11:20', '11:40', '13:00', '13:20', '13:40', '14:00', '14:20', '14:40', '15:00', '15:20', '15:40', '16:00', '16:20', '16:40'];
+    
+    // Gerar checkboxes para cada horário
+    listaHorarios.innerHTML = '';
+    horasBase.forEach(h => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '5px';
+        div.innerHTML = `
+            <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" value="${h}" class="chk-horario" checked>
+                <span>${h}</span>
+            </label>
+        `;
+        listaHorarios.appendChild(div);
+    });
+
+    // Lógica visual para calendário
+    const dias = document.querySelectorAll('.calendar-day:not([style*="color:#aaa"])');
+    dias.forEach(d => {
+        d.addEventListener('click', (e) => {
+            document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'));
+            e.target.classList.add('selected');
+        });
+    });
+}
+
+async function salvarDisponibilidade() {
+    const btn = document.querySelector('button[onclick="salvarDisponibilidade()"]');
+    if(btn) { btn.innerText = "Salvando..."; btn.disabled = true; }
+
+    try {
+        const profId = localStorage.getItem('usuario_id');
+        if (!profId) throw new Error("ID do profissional não encontrado.");
+
+        const checkboxes = document.querySelectorAll('.chk-horario:checked');
+        const horarios = Array.from(checkboxes).map(c => c.value);
+
+        if (horarios.length === 0) {
+            alert("Selecione pelo menos um horário.");
+            if(btn) { btn.innerText = "Salvar disponibilidade"; btn.disabled = false; }
+            return;
+        }
+
+        // Salva a mesma grade de horários para todos os dias úteis (escalável, poupa tempo do profissional)
+        const diasUteis = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+        
+        let success = true;
+        for (const dia of diasUteis) {
+            const resp = await fetch(`${API_URL}/disponibilidade`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    profissional_id: profId,
+                    dia_semana: dia,
+                    horarios: horarios
+                })
+            });
+            if (!resp.ok) success = false;
+        }
+
+        if (success) {
+            alert("Grade de horários salva para todos os dias úteis com sucesso!");
+        } else {
+            alert("Houve um erro ao salvar alguns horários.");
+        }
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        alert("Erro de conexão ao salvar disponibilidade.");
+    } finally {
+        if(btn) { btn.innerText = "Salvar disponibilidade"; btn.disabled = false; }
+    }
+}
