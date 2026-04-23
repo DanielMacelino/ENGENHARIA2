@@ -60,7 +60,7 @@ function renderSidebar() {
         menuHTML += `
             <li><a href="/profissional/dashboard" class="${path === '/profissional/dashboard' ? 'active' : ''}"><span style="color:gray">&#x1f3e0;</span> Home (Agenda)</a></li>
             <li><a href="/profissional/disponibilidade" class="${path === '/profissional/disponibilidade' ? 'active' : ''}"><span style="color:gray;">&#x1f4c6;</span> Configurar Horários</a></li>
-            <li><a href="/profissional/itens" class="${path === '/profissional/itens' || path === '/profissional/criar-item' ? 'active' : ''}"><span style="color:gray;">&#x1f4e6;</span> Inventário / Almoxarifado</a></li>
+            <li><a href="/profissional/itens" class="${path === '/profissional/itens' || path === '/profissional/criar-item' ? 'active' : ''}"><span style="color:gray;">&#x1f4e6;</span> Inventário</a></li>
             <li><a href="/profissional/mapa" class="${path === '/profissional/mapa' ? 'active' : ''}"><span style="color:gray;">&#x1f4cd;</span> Mapa Estratégico</a></li>
             <li><a href="/profissional/informacoes" class="${path === '/profissional/informacoes' ? 'active' : ''}"><span style="color:gray;">&#x1f4da;</span> Institucional</a></li>
         `;
@@ -350,15 +350,12 @@ async function mudarStatus(id, novoStatus) {
 }
 
 /** =========================================================
- * DASHBOARD ALUNO
+ * DASHBOARD ALUNO - NOVO SISTEMA DINÂMICO
  * ========================================================= */
 async function carregarDashboardAluno() {
-    const grade = document.getElementById('grade-horarios');
+    // Carregar próximo agendamento
     const proximoCard = document.getElementById('proximo-agendamento-card');
-    if (!grade) return;
-
     const usuarioId = localStorage.getItem('usuario_id');
-    const dias = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
     try {
         if (usuarioId && proximoCard) {
@@ -382,57 +379,165 @@ async function carregarDashboardAluno() {
             }
         }
 
-        const response = await fetch(`${API_URL}/profissionais/horarios`);
-        const disponibilidades = await response.json();
+        // Inicializar formulário de agendamento
+        inicializarFormularioAgendamento();
 
-        grade.innerHTML = '';
-        dias.forEach(dia => {
-            const col = document.createElement('div');
-            col.className = 'schedule-column';
-            col.innerHTML = `<div class="schedule-header">${dia}</div>`;
-
-            const horasBase = ['08:00', '08:20', '08:40', '09:00', '09:20', '09:40'];
-
-            horasBase.forEach(hora => {
-                const disp = disponibilidades.find(d => d.dia_semana === dia && d.horarios.includes(hora));
-                const isDisponivel = !!disp && dia !== 'Sábado';
-                
-                if (dia === 'Segunda-feira') {
-                    const hl = document.createElement('div');
-                    hl.className = 'time-slot time-label';
-                    hl.innerText = hora;
-                    col.appendChild(hl);
-                }
-
-                const block = document.createElement('div');
-                block.className = `time-slot ${isDisponivel ? 'available' : 'unavailable'}`;
-                block.innerText = isDisponivel ? 'Disponível' : 'Indisponível';
-
-                if (isDisponivel) {
-                    block.onclick = () => realizarAgendamento(disp.profissional_id, disp.usuarios.especialidade, dia, hora, disp.usuarios.nome);
-                }
-                col.appendChild(block);
-            });
-            grade.appendChild(col);
-        });
     } catch (error) {
-        console.error('Erro ao buscar horários:', error);
+        console.error('Erro ao carregar dashboard aluno:', error);
     }
 }
 
-async function realizarAgendamento(profId, esp, dia, hora, profNome) {
-    if (!confirm(`Deseja agendar para ${dia} às ${hora} com ${profNome}?`)) return;
+async function inicializarFormularioAgendamento() {
+    // Definir datas min e max do input date
+    const inputData = document.getElementById('data-agendamento');
+    if (inputData) {
+        const hoje = new Date();
+        const daqui30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        inputData.min = hoje.toISOString().split('T')[0];
+        inputData.max = daqui30Dias.toISOString().split('T')[0];
+    }
+}
+
+async function atualizarProfissionaisFiltrados() {
+    const especialidade = document.getElementById('sel-especialidade').value;
+    const selectProf = document.getElementById('sel-profissional');
+    
+    if (!especialidade) {
+        selectProf.innerHTML = '<option value="">-- Selecione uma especialidade primeiro --</option>';
+        limparHorarios();
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/profissionais`);
+        const profissionais = await response.json();
+
+        // Filtrar por especialidade
+        const filtrados = profissionais.filter(p => p.especialidade === especialidade);
+
+        selectProf.innerHTML = '<option value="">-- Selecione --</option>';
+        filtrados.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = p.nome;
+            selectProf.appendChild(option);
+        });
+
+        limparHorarios();
+    } catch (error) {
+        console.error('Erro ao buscar profissionais:', error);
+    }
+}
+
+async function atualizarHorariosDisponíveis() {
+    const especialidade = document.getElementById('sel-especialidade').value;
+    const profissionalId = document.getElementById('sel-profissional').value;
+    const dataStr = document.getElementById('data-agendamento').value;
+    const containerHorarios = document.getElementById('horarios-container');
+    const gridHorarios = document.getElementById('grid-horarios');
+
+    if (!especialidade || !profissionalId || !dataStr) {
+        containerHorarios.style.display = 'none';
+        limparResumo();
+        return;
+    }
+
+    try {
+        // Descobrir dia da semana da data
+        const data = new Date(dataStr + 'T00:00:00');
+        const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+        const diaSemana = diasSemana[data.getDay()];
+
+        // Buscar disponibilidades
+        const response = await fetch(`${API_URL}/profissionais/horarios`);
+        const disponibilidades = await response.json();
+
+        // Filtrar disponibilidades para o profissional e dia específico
+        const disponivelDia = disponibilidades.find(
+            d => d.profissional_id === profissionalId && d.dia_semana === diaSemana
+        );
+
+        gridHorarios.innerHTML = '';
+        containerHorarios.style.display = 'block';
+
+        if (!disponivelDia || disponivelDia.horarios.length === 0) {
+            gridHorarios.innerHTML = '<div class="horario-nao-disponivel">Nenhum horário disponível para este profissional neste dia.</div>';
+            limparResumo();
+            return;
+        }
+
+        // Renderizar botões de horário
+        disponivelDia.horarios.forEach(horario => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn-horario';
+            btn.textContent = horario;
+            btn.onclick = () => selecionarHorario(especialidade, profissionalId, dataStr, horario, btn);
+            gridHorarios.appendChild(btn);
+        });
+
+    } catch (error) {
+        console.error('Erro ao buscar horários disponíveis:', error);
+    }
+}
+
+function selecionarHorario(especialidade, profissionalId, dataStr, horario, botao) {
+    // Remover seleção anterior
+    document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selected'));
+    
+    // Selecionar novo horário
+    botao.classList.add('selected');
+
+    // Buscar nome do profissional
+    const selectProf = document.getElementById('sel-profissional');
+    const profNome = selectProf.options[selectProf.selectedIndex].text;
+
+    // Formatar data para exibição
+    const data = new Date(dataStr + 'T00:00:00');
+    const dataFormatada = data.toLocaleDateString('pt-BR');
+
+    // Atualizar resumo
+    const resumo = document.getElementById('resumo-agendamento');
+    const btnConfirmar = document.getElementById('btn-confirmar-agendamento');
+    
+    document.getElementById('resumo-especialidade').textContent = especialidade;
+    document.getElementById('resumo-profissional').textContent = profNome;
+    document.getElementById('resumo-data').textContent = dataFormatada;
+    document.getElementById('resumo-horario').textContent = horario;
+
+    resumo.classList.add('visible');
+    btnConfirmar.style.display = 'block';
+
+    // Armazenar dados no botão para confirmar depois
+    btnConfirmar.dataset.especialidade = especialidade;
+    btnConfirmar.dataset.profissionalId = profissionalId;
+    btnConfirmar.dataset.data = dataStr;
+    btnConfirmar.dataset.horario = horario;
+}
+
+async function confirmarAgendamento() {
+    const btn = document.getElementById('btn-confirmar-agendamento');
+    const especialidade = btn.dataset.especialidade;
+    const profissionalId = btn.dataset.profissionalId;
+    const data = btn.dataset.data;
+    const horario = btn.dataset.horario;
+
+    if (!especialidade || !profissionalId || !data || !horario) {
+        alert('Por favor, selecione todos os campos antes de confirmar.');
+        return;
+    }
 
     try {
         const response = await fetch(`${API_URL}/agendamentos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 usuario_id: localStorage.getItem('usuario_id'),
-                profissional_id: profId,
-                especialidade: esp,
-                data: new Date().toISOString().split('T')[0],
-                hora: hora 
+                profissional_id: profissionalId,
+                especialidade: especialidade,
+                data: data,
+                hora: horario
             })
         });
 
@@ -440,11 +545,31 @@ async function realizarAgendamento(profId, esp, dia, hora, profNome) {
             alert("Agendamento realizado com sucesso!");
             window.location.href = '/aluno/agendamentos';
         } else {
-            alert("Erro ao realizar agendamento.");
+            const erro = await response.json();
+            alert(erro.error || "Erro ao realizar agendamento.");
         }
     } catch (error) {
-        console.error('Erro ao agendar:', error);
+        console.error('Erro ao confirmar agendamento:', error);
+        alert('Erro ao conectar com o servidor.');
     }
+}
+
+function limparHorarios() {
+    const containerHorarios = document.getElementById('horarios-container');
+    const gridHorarios = document.getElementById('grid-horarios');
+    
+    if (containerHorarios) containerHorarios.style.display = 'none';
+    if (gridHorarios) gridHorarios.innerHTML = '';
+    
+    limparResumo();
+}
+
+function limparResumo() {
+    const resumo = document.getElementById('resumo-agendamento');
+    const btnConfirmar = document.getElementById('btn-confirmar-agendamento');
+    
+    if (resumo) resumo.classList.remove('visible');
+    if (btnConfirmar) btnConfirmar.style.display = 'none';
 }
 
 async function carregarAgendamentosAluno() {
@@ -590,37 +715,54 @@ async function exportarPDF(tipo = 'itens') {
 }
 
 /** =========================================================
- * CONFIGURAÇÃO DE DISPONIBILIDADE (PROFISSIONAL)
+ * CONFIGURAÇÃO DE DISPONIBILIDADE (PROFISSIONAL) - MATRIZ
  * ========================================================= */
 async function carregarSetupProfissional() {
-    const listaHorarios = document.getElementById('lista-horarios-prof');
-    if (!listaHorarios) return;
+    const matrizTbody = document.getElementById('matriz-horarios-prof');
+    if (!matrizTbody) return;
 
-    // Horários base que podem ser selecionados
-    const horasBase = ['08:00', '08:20', '08:40', '09:00', '09:20', '09:40', '10:00', '10:20', '10:40', '11:00', '11:20', '11:40', '13:00', '13:20', '13:40', '14:00', '14:20', '14:40', '15:00', '15:20', '15:40', '16:00', '16:20', '16:40'];
+    const profId = localStorage.getItem('usuario_id');
+    const horasBase = [];
     
-    // Gerar checkboxes para cada horário
-    listaHorarios.innerHTML = '';
-    horasBase.forEach(h => {
-        const div = document.createElement('div');
-        div.style.marginBottom = '5px';
-        div.innerHTML = `
-            <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-                <input type="checkbox" value="${h}" class="chk-horario" checked>
-                <span>${h}</span>
-            </label>
-        `;
-        listaHorarios.appendChild(div);
-    });
+    // Gerar horários de 30 em 30 minutos (08:00 às 18:30)
+    for (let h = 8; h <= 18; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            horasBase.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+        }
+    }
 
-    // Lógica visual para calendário
-    const dias = document.querySelectorAll('.calendar-day:not([style*="color:#aaa"])');
-    dias.forEach(d => {
-        d.addEventListener('click', (e) => {
-            document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'));
-            e.target.classList.add('selected');
+    const diasSemana = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+
+    try {
+        // Buscar disponibilidades salvass
+        const response = await fetch(`${API_URL}/profissionais/horarios`);
+        const disponibilidades = await response.json();
+
+        matrizTbody.innerHTML = '';
+
+        horasBase.forEach(horario => {
+            const tr = document.createElement('tr');
+            let html = `<td class="horario-col"><span class="label-horario">${horario}</span></td>`;
+
+            diasSemana.forEach(dia => {
+                const jaExiste = disponibilidades.find(
+                    d => d.profissional_id === profId && d.dia_semana === dia && d.horarios.includes(horario)
+                );
+
+                html += `
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="chk-disponibilidade" data-dia="${dia}" data-horario="${horario}" ${jaExiste ? 'checked' : ''}>
+                    </td>
+                `;
+            });
+
+            tr.innerHTML = html;
+            matrizTbody.appendChild(tr);
         });
-    });
+
+    } catch (error) {
+        console.error('Erro ao carregar matriz de horários:', error);
+    }
 }
 
 async function salvarDisponibilidade() {
@@ -631,34 +773,43 @@ async function salvarDisponibilidade() {
         const profId = localStorage.getItem('usuario_id');
         if (!profId) throw new Error("ID do profissional não encontrado.");
 
-        const checkboxes = document.querySelectorAll('.chk-horario:checked');
-        const horarios = Array.from(checkboxes).map(c => c.value);
-
-        if (horarios.length === 0) {
-            alert("Selecione pelo menos um horário.");
-            if(btn) { btn.innerText = "Salvar disponibilidade"; btn.disabled = false; }
-            return;
-        }
-
-        // Salva a mesma grade de horários para todos os dias úteis (escalável, poupa tempo do profissional)
-        const diasUteis = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+        const checkboxes = document.querySelectorAll('.chk-disponibilidade:checked');
+        const diasSemana = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
         
+        // Agrupar horários por dia
+        const horariosPorDia = {};
+        diasSemana.forEach(dia => {
+            horariosPorDia[dia] = [];
+        });
+
+        checkboxes.forEach(chk => {
+            const dia = chk.dataset.dia;
+            const horario = chk.dataset.horario;
+            if (!horariosPorDia[dia].includes(horario)) {
+                horariosPorDia[dia].push(horario);
+            }
+        });
+
         let success = true;
-        for (const dia of diasUteis) {
-            const resp = await fetch(`${API_URL}/disponibilidade`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    profissional_id: profId,
-                    dia_semana: dia,
-                    horarios: horarios
-                })
-            });
-            if (!resp.ok) success = false;
+        for (const dia of diasSemana) {
+            const horarios = horariosPorDia[dia];
+            
+            if (horarios.length > 0) {
+                const resp = await fetch(`${API_URL}/disponibilidade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        profissional_id: profId,
+                        dia_semana: dia,
+                        horarios: horarios
+                    })
+                });
+                if (!resp.ok) success = false;
+            }
         }
 
         if (success) {
-            alert("Grade de horários salva para todos os dias úteis com sucesso!");
+            alert("Grade de horários salva com sucesso!");
         } else {
             alert("Houve um erro ao salvar alguns horários.");
         }
@@ -666,6 +817,14 @@ async function salvarDisponibilidade() {
         console.error("Erro ao salvar:", error);
         alert("Erro de conexão ao salvar disponibilidade.");
     } finally {
-        if(btn) { btn.innerText = "Salvar disponibilidade"; btn.disabled = false; }
+        if(btn) { btn.innerText = "Salvar Disponibilidade"; btn.disabled = false; }
     }
+}
+
+function selecionarTodos() {
+    document.querySelectorAll('.chk-disponibilidade').forEach(chk => chk.checked = true);
+}
+
+function deselecionarTodos() {
+    document.querySelectorAll('.chk-disponibilidade').forEach(chk => chk.checked = false);
 }
