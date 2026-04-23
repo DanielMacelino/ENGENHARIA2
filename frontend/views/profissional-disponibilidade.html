@@ -7,6 +7,77 @@
     <title>Disponibilidade - Posto de Saúde</title>
     <script src="/config.js"></script>
     <link rel="stylesheet" href="/public/style.css">
+    <style>
+        .matriz-horarios {
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+        
+        .matriz-horarios table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        .matriz-horarios th,
+        .matriz-horarios td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        
+        .matriz-horarios th {
+            background: linear-gradient(135deg, var(--green-primary), #0d6b37);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .matriz-horarios tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .matriz-horarios tr:hover {
+            background: #f0f0f0;
+        }
+        
+        .matriz-horarios td {
+            vertical-align: middle;
+        }
+        
+        .horario-col {
+            font-weight: 600;
+            background: #f5f5f5;
+            width: 80px;
+        }
+        
+        .matriz-horarios input[type="checkbox"] {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--green-primary);
+        }
+        
+        .label-horario {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .dia-semana {
+            font-weight: bold;
+            color: var(--green-primary);
+        }
+
+        .info-box {
+            background: #e8f5e9;
+            border-left: 4px solid var(--green-primary);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            color: #2e7d32;
+        }
+    </style>
 </head>
 
 <body onload="carregarSetupProfissional()">
@@ -38,47 +109,40 @@
         <main class="content-area">
 
             <div class="page-header" style="border-bottom:none; margin-bottom: 10px;">
-                <h2 class="page-title">Disponibilidade</h2>
+                <h2 class="page-title">Configurar Horários de Atendimento</h2>
             </div>
             <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:30px;">
 
-            <div>
-                <div class="form-group-select">
-                    <label style="display:block; margin-bottom:5px; font-size:0.9rem; color:#444;">Especialista:</label>
-                    <select id="especialidade" style="border-radius:0;">
-                        <option>Clínico Geral</option>
-                        <option>Psicólogo</option>
-                        <option>Dentista</option>
-                    </select>
-                </div>
+            <div class="info-box">
+                ℹ️ Marque os horários em que você atende em cada dia da semana. Os horários são em intervalos de 30 minutos, de 08:00 às 18:30.
             </div>
 
-            <div class="profissional-setup-container" style="display:block;">
-                <p style="margin-bottom:15px; font-size:0.95rem; color:#555;">Selecione os horários em que você atende em cada dia da semana:</p>
-                <div class="table-responsive">
-                    <table class="table-custom" style="text-align: center;">
-                        <thead>
-                            <tr>
-                                <th>Horário</th>
-                                <th>Segunda-feira</th>
-                                <th>Terça-feira</th>
-                                <th>Quarta-feira</th>
-                                <th>Quinta-feira</th>
-                                <th>Sexta-feira</th>
-                            </tr>
-                        </thead>
-                        <tbody id="matriz-horarios-prof">
-                            <!-- Preenchido via setup script.js -->
-                            <tr><td colspan="6">Carregando matriz...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="matriz-horarios">
+                <table class="table-custom" id="table-matriz-horarios">
+                    <thead>
+                        <tr>
+                            <th>Horário</th>
+                            <th class="dia-semana">Segunda-feira</th>
+                            <th class="dia-semana">Terça-feira</th>
+                            <th class="dia-semana">Quarta-feira</th>
+                            <th class="dia-semana">Quinta-feira</th>
+                            <th class="dia-semana">Sexta-feira</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matriz-horarios-prof">
+                        <tr><td colspan="6" style="text-align:center; color:#999;">Carregando matriz de horários...</td></tr>
+                    </tbody>
+                </table>
             </div>
 
             <!-- Botão da ação POST /disponibilidade -->
-            <div style="margin-top: 40px;">
+            <div style="margin-top: 40px; display: flex; gap: 10px;">
                 <button onclick="salvarDisponibilidade()" class="btn-green"
-                    style="background:#13872c; padding: 10px 20px;">Salvar disponibilidade</button>
+                    style="background:#13872c; padding: 10px 20px;">💾 Salvar Disponibilidade</button>
+                <button onclick="selecionarTodos()" class="btn-green"
+                    style="background:#4CAF50; padding: 10px 20px;">✓ Selecionar Todos</button>
+                <button onclick="deselecionarTodos()" class="btn-green"
+                    style="background:#f44336; padding: 10px 20px;">✕ Desselecionar Todos</button>
             </div>
 
         </main>
