@@ -222,34 +222,98 @@ export const getLogsPorData = async (req, res) => {
 };
 
 // =====================================================
-// GENERATE PDF - Gera relatório em PDF dos itens
+// GENERATE PDF - Gera relatório em PDF escalável (itens ou agendamentos)
 // =====================================================
 export const generatePDF = async (req, res) => {
     try {
-        const { data: itens, error } = await supabase
-            .from("itens")
-            .select("*");
+        const { tipo, profissional_id } = req.query;
+        let dadosAgendamentos = null;
+        let dadosItens = null;
 
-        if (error) {
-            return res.status(500).json({ error: error.message });
+        if (tipo === 'agendamentos') {
+            if (!profissional_id || profissional_id === 'undefined') {
+                return res.status(400).json({ error: "ID do profissional é obrigatório." });
+            }
+            
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const [year, month] = currentMonth.split('-');
+            const lastDay = new Date(year, month, 0).getDate();
+            const startDate = `${currentMonth}-01`;
+            const endDate = `${currentMonth}-${lastDay}`;
+
+            const { data: agendamentos, error } = await supabase
+                .from("agendamentos")
+                .select(`
+                    id,
+                    data,
+                    hora,
+                    especialidade,
+                    status,
+                    usuarios!agendamentos_usuario_id_fkey (nome)
+                `)
+                .eq("profissional_id", profissional_id)
+                .gte("data", startDate)
+                .lte("data", endDate)
+                .order("data", { ascending: true })
+                .order("hora", { ascending: true });
+
+            if (error) {
+                return res.status(500).json({ error: error.message });
+            }
+            dadosAgendamentos = agendamentos;
+        } else {
+            // Default: itens
+            const { data: itens, error } = await supabase
+                .from("itens")
+                .select("*");
+
+            if (error) {
+                return res.status(500).json({ error: error.message });
+            }
+            dadosItens = itens;
         }
 
+        // Se chegou até aqui sem erros, configura o PDF
         const doc = new PDFDocument();
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename=relatorio.pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=relatorio_${tipo || 'itens'}.pdf`);
         doc.pipe(res);
-        doc.fontSize(20).text("Relatório de Itens do Sistema", { align: 'center' });
-        doc.moveDown();
 
-        itens.forEach(item => {
-            doc.fontSize(12).text(`- ${item.nome} (Código: ${item.codigo})`);
-            if (item.descricao) doc.fontSize(10).text(`  Descrição: ${item.descricao}`);
-            doc.moveDown(0.5);
-        });
+        if (tipo === 'agendamentos') {
+            doc.fontSize(20).text("Relatório de Agendamentos (Mês Atual)", { align: 'center' });
+            doc.moveDown();
+
+            if (dadosAgendamentos && dadosAgendamentos.length > 0) {
+                dadosAgendamentos.forEach(a => {
+                    const nomePaciente = a.usuarios ? a.usuarios.nome : 'N/A';
+                    const dataFormatada = a.data ? a.data.split('-').reverse().join('/') : 'N/A';
+                    doc.fontSize(12).text(`- ${dataFormatada} às ${a.hora} | Paciente: ${nomePaciente} | Status: ${a.status}`);
+                    doc.moveDown(0.5);
+                });
+            } else {
+                doc.fontSize(12).text("Nenhum agendamento para o mês atual.", { align: 'center' });
+            }
+        } else {
+            doc.fontSize(20).text("Relatório de Itens do Sistema", { align: 'center' });
+            doc.moveDown();
+
+            if (dadosItens && dadosItens.length > 0) {
+                dadosItens.forEach(item => {
+                    doc.fontSize(12).text(`- ${item.nome} (Código: ${item.codigo}) | Qtd: ${item.quantidade} | Status: ${item.status}`);
+                    if (item.descricao) doc.fontSize(10).text(`  Descrição: ${item.descricao}`);
+                    doc.moveDown(0.5);
+                });
+            } else {
+                doc.fontSize(12).text("Nenhum item cadastrado.", { align: 'center' });
+            }
+        }
 
         doc.end();
     } catch (err) {
-        return res.status(500).json({ error: "Erro ao gerar PDF." });
+        console.error("Erro interno na geração de PDF:", err);
+        if (!res.headersSent) {
+            return res.status(500).json({ error: "Erro ao gerar PDF.", details: err.message });
+        }
     }
 };
 
@@ -383,12 +447,17 @@ export const getAgendamentosProfissional = async (req, res) => {
     }
 
     try {
-        const hoje = new Date().toISOString().split('T')[0];
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        const [year, month] = currentMonth.split('-');
+        const lastDay = new Date(year, month, 0).getDate();
+        const startDate = `${currentMonth}-01`;
+        const endDate = `${currentMonth}-${lastDay}`;
 
         const { data: agendamentos, error } = await supabase
             .from("agendamentos")
             .select(`
                 id,
+                data,
                 hora,
                 especialidade,
                 status,
@@ -397,7 +466,9 @@ export const getAgendamentosProfissional = async (req, res) => {
                 )
             `)
             .eq("profissional_id", profissional_id)
-            .eq("data", hoje)
+            .gte("data", startDate)
+            .lte("data", endDate)
+            .order("data", { ascending: true })
             .order("hora", { ascending: true });
 
         if (error) {

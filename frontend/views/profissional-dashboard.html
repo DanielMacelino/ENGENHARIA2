@@ -37,9 +37,9 @@
         <main class="content-area">
 
             <div class="page-header" style="border-bottom:none; margin-bottom: 20px;">
-                <h2 class="page-title">Pacientes Agendados para Hoje</h2>
+                <h2 class="page-title">Pacientes Agendados (Mês Atual)</h2>
                 <div style="background:#ddd; padding:5px 15px; border-radius:20px; font-size:0.9rem;">
-                    &#x1f4c5; <span id="data-atual">24/03/2026</span>
+                    &#x1f4c5; Mês: <span id="data-atual"></span>
                 </div>
             </div>
 
@@ -49,6 +49,7 @@
                         <thead>
                             <tr>
                                 <th>Paciente</th>
+                                <th>Data</th>
                                 <th>Horário</th>
                                 <th>Motivo / Especialidade</th>
                                 <th>Status</th>
@@ -57,7 +58,7 @@
                         </thead>
                         <tbody id="lista-pacientes-hoje">
                             <tr>
-                                <td colspan="5" style="text-align: center; padding: 20px;">Carregando agendamentos...</td>
+                                <td colspan="6" style="text-align: center; padding: 20px;">Carregando agendamentos...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -65,7 +66,7 @@
             </div>
             
             <div style="text-align: right; margin-top: 15px;">
-                <button onclick="exportarPFD()" class="btn-green" style="background-color:#555;">
+                <button onclick="exportarPDF('agendamentos')" class="btn-green" style="background-color:#555;">
                     &#x1f4c4; Gerar Relatório PDF
                 </button>
             </div>
@@ -76,7 +77,7 @@
 
             <div class="stats-grid">
                 <div class="stat-box">
-                    <span>Atendidos hoje</span>
+                    <span>Atendidos no Mês</span>
                     <strong id="stat-atendidos">0</strong>
                 </div>
                 <div class="stat-box">

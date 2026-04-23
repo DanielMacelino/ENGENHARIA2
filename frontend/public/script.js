@@ -116,15 +116,45 @@ async function fazerLogin(event) {
         const data = await response.json();
 
         if (response.ok) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('usuario_id', data.id);
-            localStorage.setItem('tipo_usuario', data.tipo_usuario);
-            localStorage.setItem('usuario_nome', data.email.split('@')[0]); 
+            if (data.requires_2fa) {
+                const codigo = prompt(`${data.message}\n\nDigite o código de 6 dígitos recebido:`);
+                if (!codigo) {
+                    alert('Login cancelado. Código não informado.');
+                    if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
+                    return;
+                }
+                const verifyResp = await fetch(`${API_URL}/login/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: data.email, codigo })
+                });
+                const verifyData = await verifyResp.json();
+                if (verifyResp.ok) {
+                    localStorage.setItem('token', verifyData.token);
+                    localStorage.setItem('usuario_id', verifyData.id);
+                    localStorage.setItem('tipo_usuario', verifyData.tipo_usuario);
+                    localStorage.setItem('usuario_nome', verifyData.email.split('@')[0]); 
 
-            if (data.tipo_usuario === 'aluno') {
-                window.location.href = '/aluno/dashboard';
+                    if (verifyData.tipo_usuario === 'aluno') {
+                        window.location.href = '/aluno/dashboard';
+                    } else {
+                        window.location.href = '/profissional/dashboard';
+                    }
+                } else {
+                    alert(verifyData.error || 'Código 2FA inválido.');
+                    if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
+                }
             } else {
-                window.location.href = '/profissional/dashboard';
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('usuario_id', data.id);
+                localStorage.setItem('tipo_usuario', data.tipo_usuario);
+                localStorage.setItem('usuario_nome', data.email.split('@')[0]); 
+
+                if (data.tipo_usuario === 'aluno') {
+                    window.location.href = '/aluno/dashboard';
+                } else {
+                    window.location.href = '/profissional/dashboard';
+                }
             }
         } else {
             alert(data.error || 'Credenciais inválidas.');
@@ -195,12 +225,37 @@ async function realizarCadastro(event) {
             const loginData = await loginResp.json();
             
             if (loginResp.ok) {
-                localStorage.setItem('token', loginData.token);
-                localStorage.setItem('usuario_id', loginData.id);
-                localStorage.setItem('tipo_usuario', loginData.tipo_usuario);
-                localStorage.setItem('usuario_nome', nome.split(' ')[0]);
-                
-                window.location.href = loginData.tipo_usuario === 'aluno' ? '/aluno/dashboard' : '/profissional/dashboard';
+                if (loginData.requires_2fa) {
+                    const codigo = prompt(`${loginData.message}\n\nDigite o código de 6 dígitos recebido:`);
+                    if (codigo) {
+                        const verifyResp = await fetch(`${API_URL}/login/verify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: loginData.email, codigo })
+                        });
+                        const verifyData = await verifyResp.json();
+                        if (verifyResp.ok) {
+                            localStorage.setItem('token', verifyData.token);
+                            localStorage.setItem('usuario_id', verifyData.id);
+                            localStorage.setItem('tipo_usuario', verifyData.tipo_usuario);
+                            localStorage.setItem('usuario_nome', nome.split(' ')[0]);
+                            
+                            window.location.href = verifyData.tipo_usuario === 'aluno' ? '/aluno/dashboard' : '/profissional/dashboard';
+                        } else {
+                            alert(verifyData.error || 'Código inválido.');
+                            window.location.href = '/login';
+                        }
+                    } else {
+                        window.location.href = '/login';
+                    }
+                } else {
+                    localStorage.setItem('token', loginData.token);
+                    localStorage.setItem('usuario_id', loginData.id);
+                    localStorage.setItem('tipo_usuario', loginData.tipo_usuario);
+                    localStorage.setItem('usuario_nome', nome.split(' ')[0]);
+                    
+                    window.location.href = loginData.tipo_usuario === 'aluno' ? '/aluno/dashboard' : '/profissional/dashboard';
+                }
             } else {
                 window.location.href = '/login';
             }
@@ -220,6 +275,13 @@ async function carregarDashboardProfissional() {
     const tbody = document.getElementById('lista-pacientes-hoje');
     if (!tbody) return;
 
+    const dataAtualSpan = document.getElementById('data-atual');
+    if (dataAtualSpan) {
+        const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        const hoje = new Date();
+        dataAtualSpan.innerText = `${nomesMeses[hoje.getMonth()]} de ${hoje.getFullYear()}`;
+    }
+
     const profId = localStorage.getItem('usuario_id');
     try {
         const response = await fetch(`${API_URL}/agendamentos/profissional/${profId}`);
@@ -227,7 +289,7 @@ async function carregarDashboardProfissional() {
 
         tbody.innerHTML = '';
         if (pacientes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum paciente agendado para hoje.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum paciente agendado para este mês.</td></tr>';
             return;
         }
 
@@ -238,9 +300,11 @@ async function carregarDashboardProfissional() {
             if (p.status === 'Atendido') atendidos++;
             else if (p.status === 'Confirmado' || p.status === 'Pendente') aguardando++;
 
+            const dataFormatada = p.data ? p.data.split('-').reverse().join('/') : 'N/A';
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${p.usuarios.nome}</td>
+                <td>${dataFormatada}</td>
                 <td>${p.hora}</td>
                 <td>${p.especialidade}</td>
                 <td><span class="badge ${p.status === 'Atendido' ? 'active' : (p.status === 'Pendente' ? 'warning' : '')}">${p.status}</span></td>
@@ -256,7 +320,7 @@ async function carregarDashboardProfissional() {
 
         document.getElementById('stat-atendidos').innerText = atendidos;
         document.getElementById('stat-aguardando').innerText = aguardando;
-        document.getElementById('stat-faltas').innerText = "0";
+        if(document.getElementById('stat-faltas')) document.getElementById('stat-faltas').innerText = "0";
 
     } catch (error) {
         console.error('Erro ao carregar dashboard profissional:', error);
@@ -484,4 +548,43 @@ async function calcularDistanciaFrontend() {
     const distancia = getDistanciaHaversine(lat1, lon1, lat2, lon2);
     resultBox.style.display = 'block';
     resultVal.innerText = distancia;
+}
+
+/** =========================================================
+ * EXPORTAR PDF - Gerar relatórios (Escalável para vários tipos)
+ * ========================================================= */
+async function exportarPDF(tipo = 'itens') {
+    try {
+        let url = `${API_URL}/relatorio?tipo=${tipo}`;
+        
+        // Se for relatório de agendamentos, passamos o profissional_id
+        if (tipo === 'agendamentos') {
+            const profId = localStorage.getItem('usuario_id');
+            if (!profId || profId === 'undefined' || profId === 'null') {
+                alert("Erro: ID do profissional não encontrado.");
+                return;
+            }
+            url += `&profissional_id=${profId}`;
+        }
+
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            alert('Erro ao gerar relatório PDF.');
+            return;
+        }
+
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `relatorio_${tipo}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+        console.error('Erro ao baixar o PDF:', error);
+        alert('Erro ao conectar com o servidor para baixar o PDF.');
+    }
 }
