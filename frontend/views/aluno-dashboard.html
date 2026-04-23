@@ -7,6 +7,146 @@
     <title>Aluno Dashboard - Posto de Saúde</title>
     <script src="/config.js"></script>
     <link rel="stylesheet" href="/public/style.css">
+    <style>
+        .novo-agendamento-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--green-primary);
+            box-shadow: 0 0 0 3px rgba(19, 135, 44, 0.1);
+        }
+
+        .horarios-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid var(--green-primary);
+        }
+
+        .horarios-titulo {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .horarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .btn-horario {
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-horario:hover {
+            border-color: var(--green-primary);
+            background: #f0f0f0;
+        }
+
+        .btn-horario.selected {
+            background: var(--green-primary);
+            color: white;
+            border-color: var(--green-primary);
+        }
+
+        .btn-horario:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+
+        .horario-nao-disponivel {
+            color: #999;
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+        }
+
+        .resumo-agendamento {
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .resumo-agendamento.visible {
+            display: block;
+        }
+
+        .resumo-linha {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .resumo-linha strong {
+            color: var(--green-primary);
+        }
+
+        .btn-agendar {
+            margin-top: 20px;
+        }
+
+        .info-importante {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+    </style>
 </head>
 
 <body onload="carregarDashboardAluno()">
@@ -39,8 +179,6 @@
 
             <div class="page-header" style="border-bottom:none; margin-bottom: 10px;">
                 <h2 class="page-title">Próximos agendamentos</h2>
-                <!-- Botão simula ação de modal/abrir form POST /agendamentos -->
-                <button onclick="novoAgendamentoModal()" class="btn-green">+ Novo Agendamento</button>
             </div>
             <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:20px;">
 
@@ -48,24 +186,72 @@
                 Carregando próximo agendamento...
             </div>
 
-            <div class="page-header"
-                style="margin-top: 40px; border-bottom:none; justify-content:flex-start; gap: 20px;">
-                <h2 class="page-title">Horários da semana</h2>
-                <div style="background:#ddd; padding:5px 15px; border-radius:20px; font-size:0.9rem;">
-                    &#x1f4c5; <span id="semana-atual">20/11/2025</span>
-                </div>
-                <div
-                    style="background:#eee; padding:5px 15px; border-radius:20px; font-size:0.9rem; border:1px solid #ccc;">
-                    &#x1f468;&#x200d;&#x2695;&#xfe0f; Clínico Geral
-                </div>
+            <!-- Novo Formulário de Agendamento -->
+            <div class="page-header" style="margin-top: 40px; border-bottom:none; margin-bottom: 10px;">
+                <h2 class="page-title">Novo Agendamento</h2>
+            </div>
+            <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:20px;">
+
+            <div class="info-importante">
+                ℹ️ Selecione a especialidade desejada, o profissional, a data (até 1 mês no futuro) e o horário disponível.
             </div>
 
-            <!-- Grade de Horários simulando GET /profissionais/horarios -->
-            <div class="card" style="background:transparent; padding:0; box-shadow:none;">
-                <div class="schedule-grid-container" id="grade-horarios">
-                    <!-- Preenchido via JS fake -->
-                    Carregando grade de horários disponíveis...
+            <div class="novo-agendamento-container">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sel-especialidade">Especialidade/Serviço:</label>
+                        <select id="sel-especialidade" onchange="atualizarProfissionaisFiltrados()">
+                            <option value="">-- Selecione --</option>
+                            <option value="Geral">Clínico Geral</option>
+                            <option value="Dentista">Dentista</option>
+                            <option value="Psicólogo">Psicólogo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sel-profissional">Profissional:</label>
+                        <select id="sel-profissional" onchange="atualizarHorariosDisponíveis()">
+                            <option value="">-- Selecione uma especialidade primeiro --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="data-agendamento">Data (máx. 30 dias):</label>
+                        <input type="date" id="data-agendamento" onchange="atualizarHorariosDisponíveis()">
+                    </div>
                 </div>
+
+                <!-- Horários disponíveis -->
+                <div class="horarios-container" id="horarios-container" style="display:none;">
+                    <div class="horarios-titulo">Horários disponíveis:</div>
+                    <div class="horarios-grid" id="grid-horarios">
+                        <div class="horario-nao-disponivel">Selecione especialidade, profissional e data</div>
+                    </div>
+                </div>
+
+                <!-- Resumo do agendamento -->
+                <div class="resumo-agendamento" id="resumo-agendamento">
+                    <div class="resumo-linha">
+                        <span>Especialidade:</span>
+                        <strong id="resumo-especialidade">-</strong>
+                    </div>
+                    <div class="resumo-linha">
+                        <span>Profissional:</span>
+                        <strong id="resumo-profissional">-</strong>
+                    </div>
+                    <div class="resumo-linha">
+                        <span>Data:</span>
+                        <strong id="resumo-data">-</strong>
+                    </div>
+                    <div class="resumo-linha">
+                        <span>Horário:</span>
+                        <strong id="resumo-horario">-</strong>
+                    </div>
+                </div>
+
+                <button id="btn-confirmar-agendamento" onclick="confirmarAgendamento()" class="btn-green btn-agendar" style="display:none; width:100%;">
+                    ✓ Confirmar Agendamento
+                </button>
             </div>
 
         </main>
