@@ -12,13 +12,13 @@
             overflow-x: auto;
             border-radius: 8px;
         }
-        
+
         .matriz-horarios table {
             width: 100%;
             border-collapse: collapse;
             background: white;
         }
-        
+
         .matriz-horarios th,
         .matriz-horarios td {
             border: 1px solid #ddd;
@@ -26,38 +26,38 @@
             text-align: center;
             font-size: 0.85rem;
         }
-        
+
         .matriz-horarios th {
             background: linear-gradient(135deg, var(--green-primary), #0d6b37);
             color: white;
             font-weight: bold;
         }
-        
+
         .matriz-horarios tr:nth-child(even) {
             background: #f9f9f9;
         }
-        
+
         .matriz-horarios tr:hover {
             background: #f0f0f0;
         }
-        
+
         .matriz-horarios td {
             vertical-align: middle;
         }
-        
+
         .horario-col {
             font-weight: 600;
             background: #f5f5f5;
             width: 80px;
         }
-        
+
         .matriz-horarios input[type="checkbox"] {
             cursor: pointer;
             width: 18px;
             height: 18px;
             accent-color: var(--green-primary);
         }
-        
+
         .label-horario {
             font-weight: 500;
             color: #333;
@@ -114,7 +114,7 @@
             <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:30px;">
 
             <div class="info-box">
-                ℹ️ Marque os horários em que você atende em cada dia da semana. Os horários são em intervalos de 30 minutos, de 08:00 às 18:30.
+                ℹ️ Marque os horários em que você atende em cada dia da semana.
             </div>
 
             <div class="matriz-horarios">
@@ -130,7 +130,9 @@
                         </tr>
                     </thead>
                     <tbody id="matriz-horarios-prof">
-                        <tr><td colspan="6" style="text-align:center; color:#999;">Carregando matriz de horários...</td></tr>
+                        <tr>
+                            <td colspan="6" style="text-align:center; color:#999;">Carregando matriz de horários...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -139,8 +141,8 @@
             <div style="margin-top: 40px; display: flex; gap: 10px;">
                 <button onclick="salvarDisponibilidade()" class="btn-green"
                     style="background:#13872c; padding: 10px 20px;">💾 Salvar Disponibilidade</button>
-                <button onclick="selecionarTodos()" class="btn-green"
-                    style="background:#4CAF50; padding: 10px 20px;">✓ Selecionar Todos</button>
+                <button onclick="selecionarTodos()" class="btn-green" style="background:#4CAF50; padding: 10px 20px;">✓
+                    Selecionar Todos</button>
                 <button onclick="deselecionarTodos()" class="btn-green"
                     style="background:#f44336; padding: 10px 20px;">✕ Desselecionar Todos</button>
             </div>
