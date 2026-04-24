@@ -1,27 +1,7 @@
 import multer from "multer";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const uploadDir = path.join(__dirname, "../../../uploads");
-
-// Garante que a pasta de uploads exista
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-    }
-});
+// No ambiente serverless da Vercel, o sistema de arquivos é apenas leitura.
+// Usamos memoryStorage para evitar erros ao tentar salvar arquivos localmente.
+const storage = multer.memoryStorage();
 
 export const upload = multer({ storage });
