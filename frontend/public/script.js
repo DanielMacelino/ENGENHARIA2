@@ -430,9 +430,11 @@ function renderizarTabelaProfissional(pacientes) {
             <td><span class="badge ${p.status === 'Atendido' ? 'active' : (p.status === 'Pendente' ? 'warning' : '')}">${p.status}</span></td>
             <td>
                 ${p.status !== 'Atendido' ? `
-                    <button onclick="mudarStatus('${p.id}', 'Atendido')" class="btn-green" style="padding: 2px 8px; font-size: 0.8rem;">Atender</button>
+                    <button onclick="abrirModalAtendimento('${p.id}')" class="btn-green" style="padding: 2px 8px; font-size: 0.8rem;">Atender</button>
                     <button onclick="mudarStatus('${p.id}', 'Cancelado')" style="background:none; border:none; cursor:pointer;" title="Recusar">&#x274c;</button>
-                ` : '---'}
+                ` : `
+                    <button onclick="verProntuario('${p.observacoes || ''}')" style="background:none; border:none; cursor:pointer; font-size:1.2rem;" title="Ver Prontuário">📝</button>
+                `}
             </td>
         `;
         tbody.appendChild(tr);
@@ -768,7 +770,9 @@ function renderizarTabelaAluno(agendamentos) {
             <td>${a.usuarios ? a.usuarios.nome : 'N/A'}</td>
             <td style="font-weight:bold;">${a.status}</td>
             <td>
-                ${a.status === 'Pendente' ? `<button onclick="mudarStatus('${a.id}', 'Cancelado')" style="border:none; background:transparent; cursor:pointer;" title="Cancelar">&#x1f5d1;</button>` : '---'}
+                ${a.status === 'Pendente' ? `<button onclick="mudarStatus('${a.id}', 'Cancelado')" style="border:none; background:transparent; cursor:pointer;" title="Cancelar">&#x1f5d1;</button>` : ''}
+                ${a.status === 'Atendido' ? `<button onclick="verProntuario('${a.observacoes || ''}')" class="btn-green" style="padding:2px 8px; font-size:0.8rem;">👁️ Ver Resumo</button>` : ''}
+                ${a.status !== 'Pendente' && a.status !== 'Atendido' ? '---' : ''}
             </td>
         `;
         tbody.appendChild(tr);
@@ -1273,4 +1277,72 @@ async function carregarEstatisticas() {
         console.error('Erro ao carregar estatísticas:', error);
         alert('Erro ao carregar estatísticas: ' + error.message);
     }
+}
+
+/** =========================================================
+ * PRONTUÁRIO DIGITAL - MÓDULO DE ATENDIMENTO
+ * ========================================================= */
+
+function abrirModalAtendimento(id) {
+    const modal = document.createElement('div');
+    modal.id = 'modal-prontuario';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>📝 Finalizar Atendimento</h3>
+            <p>Escreva abaixo as orientações ou prescrição para o aluno:</p>
+            <textarea id="texto-prontuario" class="form-control" rows="6" placeholder="Ex: Paciente com sintomas de gripe. Prescrito repouso e hidratação..."></textarea>
+            <div class="modal-actions">
+                <button onclick="salvarAtendimento('${id}')" class="btn-green">Salvar e Finalizar</button>
+                <button onclick="fecharModalProntuario()" class="btn-clear">Cancelar</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function fecharModalProntuario() {
+    const modal = document.getElementById('modal-prontuario');
+    if (modal) modal.remove();
+}
+
+async function salvarAtendimento(id) {
+    const observacoes = document.getElementById('texto-prontuario').value;
+    if (!observacoes) return alert("Por favor, escreva o prontuário antes de finalizar.");
+
+    try {
+        const response = await fetch(`${API_URL}/agendamentos/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'Atendido', observacoes })
+        });
+
+        if (response.ok) {
+            alert("Atendimento finalizado com sucesso!");
+            fecharModalProntuario();
+            carregarDashboardProfissional();
+        } else {
+            alert("Erro ao finalizar atendimento.");
+        }
+    } catch (error) {
+        console.error("Erro:", error);
+    }
+}
+
+function verProntuario(texto) {
+    const modal = document.createElement('div');
+    modal.id = 'modal-prontuario';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>📑 Orientações Médicas</h3>
+            <div class="prontuario-view" style="background:#f9f9f9; padding:15px; border-radius:8px; margin: 15px 0; text-align:left; color:#333; line-height:1.6;">
+                ${texto.replace(/\n/g, '<br>')}
+            </div>
+            <div class="modal-actions">
+                <button onclick="fecharModalProntuario()" class="btn-green">Fechar</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }

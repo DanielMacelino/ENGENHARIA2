@@ -562,6 +562,7 @@ export const getAgendamentosUsuario = async (req, res) => {
                 hora,
                 especialidade,
                 status,
+                observacoes,
                 usuarios!agendamentos_profissional_id_fkey (
                     nome
                 )
@@ -604,6 +605,7 @@ export const getAgendamentosProfissional = async (req, res) => {
                 hora,
                 especialidade,
                 status,
+                observacoes,
                 usuarios!agendamentos_usuario_id_fkey (
                     nome
                 )
@@ -703,16 +705,19 @@ export const salvarDisponibilidade = async (req, res) => {
 // =====================================================
 export const atualizarStatusAgendamento = async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, observacoes } = req.body;
 
     if (!id || !status) {
         return res.status(400).json({ error: "ID e novo status são obrigatórios." });
     }
 
     try {
+        const updateData = { status };
+        if (observacoes) updateData.observacoes = observacoes;
+
         const { data: atualizado, error } = await supabase
             .from("agendamentos")
-            .update({ status })
+            .update(updateData)
             .eq("id", id)
             .select()
             .single();
