@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas Gerais - Gestão IFCE</title>
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+    <!-- Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body onload="carregarEstatisticas()">
+
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <img src="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/images-removebg-preview%20(1).png" alt="Logo IFCE">
+            </div>
+            <div class="header-titles">
+                <h1>Estatísticas Gerais de Gestão</h1>
+                <h2>Instituto Federal de Educação, Ciência e Tecnologia do Ceará - Campus Crato</h2>
+            </div>
+        </div>
+        <div>
+            <a href="/login" class="btn-header-sair">Sair &#x21e8;</a>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <aside id="sidebar-container" class="sidebar"></aside>
+
+        <main class="content-area">
+            <div class="page-title">Painel de Indicadores</div>
+            <p class="page-subtitle">Visão geral de atendimentos, usuários e recursos financeiros.</p>
+
+            <!-- Cards de Resumo Rápido -->
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div class="card" style="text-align: center; border-top: 4px solid #3498db;">
+                    <span style="font-size: 0.9rem; color: #777;">Total de Agendamentos</span>
+                    <h2 id="stat-agendamentos" style="margin: 10px 0; color: #2c3e50;">...</h2>
+                </div>
+                <div class="card" style="text-align: center; border-top: 4px solid #2ecc71;">
+                    <span style="font-size: 0.9rem; color: #777;">Consultas Atendidas</span>
+                    <h2 id="stat-atendidos" style="margin: 10px 0; color: #27ae60;">...</h2>
+                </div>
+                <div class="card" style="text-align: center; border-top: 4px solid #f1c40f;">
+                    <span style="font-size: 0.9rem; color: #777;">Total de Alunos</span>
+                    <h2 id="stat-alunos" style="margin: 10px 0; color: #f39c12;">...</h2>
+                </div>
+                <div class="card" style="text-align: center; border-top: 4px solid #e74c3c;">
+                    <span style="font-size: 0.9rem; color: #777;">Gasto Estimado (Mês)</span>
+                    <h2 id="stat-gastos" style="margin: 10px 0; color: #c0392b;">...</h2>
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px;">
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">Status dos Agendamentos</h3>
+                    <canvas id="chartStatus"></canvas>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">Distribuição de Usuários</h3>
+                    <canvas id="chartUsuarios"></canvas>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 30px;">
+                <h3 style="margin-bottom: 20px;">Gestão de Inventário</h3>
+                <div style="display: flex; align-items: center; justify-content: space-around; padding: 20px;">
+                    <div style="text-align: center;">
+                        <span style="display: block; font-size: 0.9rem; color: #666;">Itens em Estoque</span>
+                        <strong id="stat-itens" style="font-size: 2rem; color: var(--green-primary);">...</strong>
+                    </div>
+                    <div style="text-align: center; background: #fff5f5; padding: 15px; border-radius: 10px; border: 1px solid #feb2b2;">
+                        <span style="display: block; font-size: 0.9rem; color: #c53030;">Estoque Crítico (< 5)</span>
+                        <strong id="stat-critico" style="font-size: 2rem; color: #e53e3e;">...</strong>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="/public/script.js"></script>
+</body>
+
+</html>

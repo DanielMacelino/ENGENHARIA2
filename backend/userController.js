@@ -684,7 +684,15 @@ export const verificar2FA = (req, res) => {
     // Remove o código após o uso
     mfaCodes.delete(email);
 
-    return res.json({ token, id: usuario.id, tipo_usuario: usuario.tipo_usuario, email: usuario.email });
+    return res.json({ 
+        token, 
+        id: usuario.id, 
+        tipo_usuario: usuario.tipo_usuario, 
+        email: usuario.email,
+        nome: usuario.nome,
+        foto_url: usuario.foto_url,
+        especialidade: usuario.especialidade
+    });
 };
 
 // =====================================================
@@ -696,12 +704,12 @@ export const uploadImagem = async (req, res) => {
     }
 
     try {
-        const { usuario_id } = req.body;
+        const { usuario_id, bucket = 'imagenspublicas' } = req.body;
         const fileName = `${Date.now()}-${req.file.originalname.replace(/\s/g, '_')}`;
         
-        // 1. Upload para o Supabase Storage (Bucket: 'imagens')
+        // 1. Upload para o Supabase Storage (Bucket dinâmico)
         const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('imagens')
+            .from(bucket)
             .upload(fileName, req.file.buffer, {
                 contentType: req.file.mimetype,
                 upsert: true
@@ -711,7 +719,7 @@ export const uploadImagem = async (req, res) => {
 
         // 2. Gerar a URL pública do arquivo
         const { data: { publicUrl } } = supabase.storage
-            .from('imagens')
+            .from(bucket)
             .getPublicUrl(fileName);
 
         // 3. Opcional: Atualizar a foto no perfil do usuário se o ID for enviado
@@ -763,4 +771,49 @@ export const calcularDistancia = (req, res) => {
     const distanciaKm = raioTerraKm * c;
 
     return res.json({ distancia_km: Number(distanciaKm.toFixed(2)) });
-};
+};
+
+// =====================================================
+// GET ESTATÍSTICAS GERAIS - Dashboard de Gestão
+// =====================================================
+export const getEstatisticasGerais = async (req, res) => {
+    try {
+        // 1. Total de Usuários por Tipo
+        const { data: users, error: errUsers } = await supabase.from("usuarios").select("tipo_usuario");
+        if (errUsers) throw errUsers;
+
+        const totalAlunos = users.filter(u => u.tipo_usuario === 'aluno').length;
+        const totalProfs = users.filter(u => u.tipo_usuario === 'profissional').length;
+
+        // 2. Agendamentos por Status
+        const { data: agendamentos, error: errAgend } = await supabase.from("agendamentos").select("status, data");
+        if (errAgend) throw errAgend;
+
+        const statsStatus = {
+            Pendente: agendamentos.filter(a => a.status === 'Pendente').length,
+            Confirmado: agendamentos.filter(a => a.status === 'Confirmado').length,
+            Cancelado: agendamentos.filter(a => a.status === 'Cancelado').length,
+            Atendido: agendamentos.filter(a => a.status === 'Atendido').length
+        };
+
+        // 3. Inventário
+        const { data: itens, error: errItens } = await supabase.from("itens").select("quantidade, nome");
+        if (errItens) throw errItens;
+
+        const totalItens = itens.length;
+        const estoqueBaixo = itens.filter(i => i.quantidade < 5).length;
+        
+        // Simulação de "Gastos" (R$ 50 por consulta atendida + R$ 10 por item no estoque)
+        const gastoEstimado = (statsStatus.Atendido * 50) + (itens.reduce((acc, i) => acc + i.quantidade, 0) * 10);
+
+        return res.json({
+            usuarios: { total: users.length, alunos: totalAlunos, profissionais: totalProfs },
+            agendamentos: { total: agendamentos.length, porStatus: statsStatus },
+            inventario: { total: totalItens, estoqueBaixo },
+            financeiro: { gastoEstimado }
+        });
+    } catch (err) {
+        console.error("Erro ao buscar estatísticas:", err);
+        return res.status(500).json({ error: "Erro ao carregar estatísticas." });
+    }
+};

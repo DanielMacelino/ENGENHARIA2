@@ -14,9 +14,11 @@ export async function seedDatabase() {
 
     // 1. Criar Usuários (Profissionais e Alunos)
     const usuarios = [
+        { nome: "Daniel Marcelino", email: "daniel@email.com", senha: passwordHash, tipo_usuario: "profissional", especialidade: "Administrador" },
+        { nome: "Vitoria", email: "vitoria@email.com", senha: passwordHash, tipo_usuario: "profissional", especialidade: "Enfermeira Chefe" },
+        { nome: "Alexandre", email: "alexandre@email.com", senha: passwordHash, tipo_usuario: "profissional", especialidade: "Médico Geral" },
         { nome: "Dr. Ricardo Silva", email: "ricardo@email.com", senha: passwordHash, tipo_usuario: "profissional", especialidade: "Cardiologia" },
-        { nome: "Dra. Ana Costa", email: "ana@email.com", senha: passwordHash, tipo_usuario: "profissional", especialidade: "Pediatria" },
-        { nome: "Dr. Marcos Souza", email: "marcos@email.com", senha: passwordHash, tipo_usuario: "profissional", especialidade: "Clínico Geral" }
+        { nome: "Dra. Ana Costa", email: "ana@email.com", senha: passwordHash, tipo_usuario: "profissional", especialidade: "Pediatria" }
     ];
 
     // Gerar 100 alunos com diversidade

@@ -72,8 +72,8 @@ function renderSidebar() {
             <li><a href="/profissional/dashboard" class="${path === '/profissional/dashboard' ? 'active' : ''}"><span style="color:gray">&#x1f3e0;</span> Home (Agenda)</a></li>
             <li><a href="/profissional/disponibilidade" class="${path === '/profissional/disponibilidade' ? 'active' : ''}"><span style="color:gray;">&#x1f4c6;</span> Configurar Horários</a></li>
             <li><a href="/profissional/itens" class="${path === '/profissional/itens' || path === '/profissional/criar-item' ? 'active' : ''}"><span style="color:gray;">&#x1f4e6;</span> Inventário</a></li>
-            <li><a href="/profissional/mapa" class="${path === '/profissional/mapa' ? 'active' : ''}"><span style="color:gray;">&#x1f4cd;</span> Mapa Estratégico</a></li>
-            <li><a href="/profissional/informacoes" class="${path === '/profissional/informacoes' ? 'active' : ''}"><span style="color:gray;">&#x1f4da;</span> Institucional</a></li>
+            <li><a href="/profissional/estatisticas" class="${path === '/profissional/estatisticas' ? 'active' : ''}"><span style="color:gray;">&#x1f4ca;</span> Estatísticas Gerais</a></li>
+            <li><a href="/profissional/logs" class="${path === '/profissional/logs' ? 'active' : ''}"><span style="color:gray;">&#x1f4dc;</span> Logs do Sistema</a></li>
         `;
     }
 
@@ -91,6 +91,7 @@ async function uploadProfilePhoto(input) {
     const formData = new FormData();
     formData.append('imagem', file);
     formData.append('usuario_id', localStorage.getItem('usuario_id'));
+    formData.append('bucket', 'imagens');
 
     try {
         const response = await fetch('/api/upload', {
@@ -140,6 +141,66 @@ function sairDoSistema() {
 /** =========================================================
  * AUTENTICAÇÃO
  * ========================================================= */
+/**
+ * Salva um novo item no inventário, incluindo upload de imagem opcional
+ */
+async function salvarNovoItem(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btn-salvar-item');
+    const inputFoto = document.getElementById('fotoItem');
+    
+    btn.disabled = true;
+    btn.innerText = 'Salvando...';
+
+    try {
+        let foto_url = '';
+
+        // 1. Se houver foto, faz o upload primeiro
+        if (inputFoto && inputFoto.files[0]) {
+            const formData = new FormData();
+            formData.append('imagem', inputFoto.files[0]);
+            formData.append('bucket', 'imagenspublicas');
+            
+            const uploadRes = await fetch(`${API_URL}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const uploadData = await uploadRes.json();
+            if (uploadRes.ok) foto_url = uploadData.url;
+        }
+
+        // 2. Prepara os dados do item
+        const item = {
+            nome: document.getElementById('nomeItem').value,
+            codigo: 'ITEM-' + Date.now(), // Gera um código único
+            descricao: document.getElementById('obsItem').value,
+            quantidade: parseInt(document.getElementById('qtdItem').value),
+            status: 'Ativo',
+            foto_url: foto_url // Requisito B (Cloud Storage)
+        };
+
+        const res = await fetch(`${API_URL}/itens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        });
+
+        if (res.ok) {
+            alert('Item cadastrado com sucesso!');
+            window.location.href = '/profissional/itens';
+        } else {
+            const err = await res.json();
+            alert('Erro ao salvar item: ' + err.error);
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao conectar com o servidor.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Gravar Item';
+    }
+}
+
 async function fazerLogin(event) {
     if (event) event.preventDefault();
     
@@ -176,7 +237,9 @@ async function fazerLogin(event) {
                     localStorage.setItem('token', verifyData.token);
                     localStorage.setItem('usuario_id', verifyData.id);
                     localStorage.setItem('tipo_usuario', verifyData.tipo_usuario);
-                    localStorage.setItem('usuario_nome', verifyData.email.split('@')[0]); 
+                    localStorage.setItem('usuario_nome', verifyData.nome);
+                    localStorage.setItem('usuario_foto', verifyData.foto_url || '');
+                    localStorage.setItem('usuario_especialidade', verifyData.especialidade || '');
 
                     if (verifyData.tipo_usuario === 'aluno') {
                         window.location.href = '/aluno/dashboard';
@@ -191,7 +254,9 @@ async function fazerLogin(event) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('usuario_id', data.id);
                 localStorage.setItem('tipo_usuario', data.tipo_usuario);
-                localStorage.setItem('usuario_nome', data.email.split('@')[0]); 
+                localStorage.setItem('usuario_nome', data.nome);
+                localStorage.setItem('usuario_foto', data.foto_url || '');
+                localStorage.setItem('usuario_especialidade', data.especialidade || '');
 
                 if (data.tipo_usuario === 'aluno') {
                     window.location.href = '/aluno/dashboard';
@@ -739,12 +804,17 @@ function renderizarTabelaItens(itens) {
 
     itens.forEach(item => {
         const tr = document.createElement('tr');
+        const fotoHTML = item.foto_url 
+            ? `<img src="${item.foto_url}" style="width:40px; height:40px; border-radius:4px; object-fit:cover;">`
+            : `<span style="font-size:1.5rem; color:#ddd;">&#x1f4e6;</span>`;
+
         tr.innerHTML = `
-            <td>${item.codigo}</td>
-            <td>${item.nome}</td>
+            <td style="text-align:center;">${fotoHTML}</td>
+            <td><strong>${item.nome}</strong></td>
+            <td><code>${item.codigo}</code></td>
             <td>${item.descricao || 'N/A'}</td>
-            <td>${item.quantidade}</td>
-            <td><span class="badge active">${item.status}</span></td>
+            <td style="text-align:center;">${item.quantidade}</td>
+            <td><span class="status-badge status-${item.status?.toLowerCase() || 'ativo'}">${item.status}</span></td>
             <td><button onclick="deletarItem('${item.id}')" style="background:none; border:none; cursor:pointer;">&#x1f5d1;</button></td>
         `;
         tbody.appendChild(tr);
@@ -890,6 +960,7 @@ async function carregarSetupProfissional() {
                     </td>
                 `;
             });
+
 
             // Coluna "Todas" para marcar a linha inteira
             html += `

@@ -59,5 +59,6 @@ app.get("/profissional/criar-item", (req, res) => res.sendFile(path.join(views, 
 app.get("/profissional/informacoes", (req, res) => res.sendFile(path.join(views, "informacoes.html")));
 app.get("/profissional/mapa", (req, res) => res.sendFile(path.join(views, "mapa.html")));
 app.get("/profissional/logs", (req, res) => res.sendFile(path.join(views, "logs.html")));
+app.get("/profissional/estatisticas", (req, res) => res.sendFile(path.join(views, "estatisticas.html")));
 
 export default app;

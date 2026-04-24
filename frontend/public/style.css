@@ -48,12 +48,15 @@ body {
 }
 
 .logo-header {
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: #aae0a4;
+    margin-right: 15px;
     display: flex;
     align-items: center;
-    gap: 10px;
+}
+
+.logo-header img {
+    height: 45px;
+    width: auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
 .header-titles h1 {
