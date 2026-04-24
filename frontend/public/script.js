@@ -11,6 +11,14 @@ let originalItens = [];
 let originalLogs = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Garantir que o toast.css está carregado
+    if (!document.querySelector('link[href*="toast.css"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/public/toast.css';
+        document.head.appendChild(link);
+    }
+
     const formLogin = document.getElementById('form-login');
     if (formLogin) {
         formLogin.addEventListener('submit', fazerLogin);
@@ -105,13 +113,13 @@ async function uploadProfilePhoto(input) {
         if (response.ok) {
             localStorage.setItem('usuario_foto', data.url);
             document.getElementById('sidebar-foto-perfil').src = data.url;
-            alert('Foto de perfil atualizada com sucesso!');
+            showToast('Foto de perfil atualizada com sucesso!');
         } else {
-            alert('Erro ao atualizar foto: ' + data.error);
+            showToast('Erro ao atualizar foto: ' + data.error);
         }
     } catch (error) {
         console.error('Erro no upload:', error);
-        alert('Erro ao conectar com o servidor.');
+        showToast('Erro ao conectar com o servidor.');
     }
 }
 
@@ -127,7 +135,7 @@ function verificarSessao() {
 
     // Proteção de Prefixo (Segurança Visual e Rotas)
     if (tipo === 'aluno' && (path.startsWith('/profissional') || path === '/logs' || path === '/itens')) {
-        alert('Acesso negado: Perfil de aluno sem privilégios administrativos.');
+        showToast('Acesso negado: Perfil de aluno sem privilégios administrativos.');
         window.location.href = '/aluno/dashboard';
     } else if (tipo !== 'aluno' && path.startsWith('/aluno')) {
         window.location.href = '/profissional/dashboard';
@@ -187,15 +195,15 @@ async function salvarNovoItem(event) {
         });
 
         if (res.ok) {
-            alert('Item cadastrado com sucesso!');
+            showToast('Item cadastrado com sucesso!');
             window.location.href = '/profissional/itens';
         } else {
             const err = await res.json();
-            alert('Erro ao salvar item: ' + err.error);
+            showToast('Erro ao salvar item: ' + err.error);
         }
     } catch (error) {
         console.error('Erro:', error);
-        alert('Erro ao conectar com o servidor.');
+        showToast('Erro ao conectar com o servidor.');
     } finally {
         btn.disabled = false;
         btn.innerText = 'Gravar Item';
@@ -224,7 +232,7 @@ async function fazerLogin(event) {
             if (data.requires_2fa) {
                 const codigo = prompt(`${data.message}\n\nDigite o código de 6 dígitos recebido:`);
                 if (!codigo) {
-                    alert('Login cancelado. Código não informado.');
+                    showToast('Login cancelado. Código não informado.');
                     if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
                     return;
                 }
@@ -248,7 +256,7 @@ async function fazerLogin(event) {
                         window.location.href = '/profissional/dashboard';
                     }
                 } else {
-                    alert(verifyData.error || 'Código 2FA inválido.');
+                    showToast(verifyData.error || 'Código 2FA inválido.');
                     if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
                 }
             } else {
@@ -266,12 +274,12 @@ async function fazerLogin(event) {
                 }
             }
         } else {
-            alert(data.error || 'Credenciais inválidas.');
+            showToast(data.error || 'Credenciais inválidas.');
             if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
         }
     } catch (error) {
         console.error('Erro no login:', error);
-        alert('Erro ao conectar com o servidor.');
+        showToast('Erro ao conectar com o servidor.');
         if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
     }
 }
@@ -283,16 +291,16 @@ async function solicitarRecuperacao() {
     const email = prompt("Informe seu e-mail para receber o código via SMS:");
     if (!email) return;
 
-    alert("Um código de segurança foi enviado para o seu celular cadastrado.");
+    showToast("Um código de segurança foi enviado para o seu celular cadastrado.");
     const codigo = prompt("Digite o código recebido via SMS:");
     
     if (codigo && codigo.length === 6) {
         const novaSenha = prompt("Digite sua nova senha:");
         if (novaSenha) {
-            alert("Senha redefinida com sucesso! Você já pode entrar.");
+            showToast("Senha redefinida com sucesso! Você já pode entrar.");
         }
     } else {
-        alert("Código inválido.");
+        showToast("Código inválido.");
     }
 }
 
@@ -307,7 +315,7 @@ async function realizarCadastro(event) {
     const confirmar = document.getElementById('confirmar_senha').value;
 
     if (senha !== confirmar) {
-        return alert("As senhas não coincidem!");
+        return showToast("As senhas não coincidem!");
     }
 
     try {
@@ -320,7 +328,7 @@ async function realizarCadastro(event) {
         const data = await response.json();
 
         if (response.ok) {
-            alert("Cadastro realizado com sucesso! Fazendo login...");
+            showToast("Cadastro realizado com sucesso! Fazendo login...");
             // Preenche o login automaticamente e entra
             localStorage.setItem('temp_email', email);
             localStorage.setItem('temp_senha', senha);
@@ -351,7 +359,7 @@ async function realizarCadastro(event) {
                             
                             window.location.href = verifyData.tipo_usuario === 'aluno' ? '/aluno/dashboard' : '/profissional/dashboard';
                         } else {
-                            alert(verifyData.error || 'Código inválido.');
+                            showToast(verifyData.error || 'Código inválido.');
                             window.location.href = '/login';
                         }
                     } else {
@@ -369,11 +377,11 @@ async function realizarCadastro(event) {
                 window.location.href = '/login';
             }
         } else {
-            alert(data.error || "Erro ao realizar cadastro.");
+            showToast(data.error || "Erro ao realizar cadastro.");
         }
     } catch (error) {
         console.error("Erro no cadastro:", error);
-        alert("Erro ao conectar com o servidor.");
+        showToast("Erro ao conectar com o servidor.");
     }
 }
 
@@ -479,11 +487,11 @@ async function mudarStatus(id, novoStatus) {
         });
 
         if (response.ok) {
-            alert("Status atualizado!");
+            showToast("Status atualizado!");
             if (localStorage.getItem('tipo_usuario') === 'aluno') carregarAgendamentosAluno();
             else carregarDashboardProfissional();
         } else {
-            alert("Erro ao atualizar status.");
+            showToast("Erro ao atualizar status.");
         }
     } catch (error) {
         console.error('Erro ao atualizar status:', error);
@@ -685,7 +693,7 @@ async function confirmarAgendamentoSimplificado() {
     const usuarioId = localStorage.getItem('usuario_id');
     
     if (!usuarioId) {
-        alert("Sessão expirada. Faça login novamente.");
+        showToast("Sessão expirada. Faça login novamente.");
         return;
     }
 
@@ -705,15 +713,15 @@ async function confirmarAgendamentoSimplificado() {
         });
 
         if (response.ok) {
-            alert(`✅ Sucesso! Seu agendamento para ${agendamentoSelecionado.especialidade} foi solicitado.`);
+            showToast(`✅ Sucesso! Seu agendamento para ${agendamentoSelecionado.especialidade} foi solicitado.`);
             window.location.href = '/aluno/agendamentos';
         } else {
             const err = await response.json();
-            alert("Erro ao agendar: " + err.error);
+            showToast("Erro ao agendar: " + err.error);
         }
     } catch (error) {
         console.error('Erro no agendamento:', error);
-        alert("Erro de conexão com o servidor.");
+        showToast("Erro de conexão com o servidor.");
     }
 }
 
@@ -895,7 +903,7 @@ async function calcularDistanciaFrontend() {
     const resultBox = document.getElementById('resultado-distancia');
     const resultVal = document.getElementById('valor-distancia');
 
-    if (!valA || !valB) return alert("Por favor, selecione as duas origens.");
+    if (!valA || !valB) return showToast("Por favor, selecione as duas origens.");
     const [lat1, lon1] = valA.split(',').map(Number);
     const [lat2, lon2] = valB.split(',').map(Number);
     
@@ -915,7 +923,7 @@ async function exportarPDF(tipo = 'itens') {
         if (tipo === 'agendamentos') {
             const profId = localStorage.getItem('usuario_id');
             if (!profId || profId === 'undefined' || profId === 'null') {
-                alert("Erro: ID do profissional não encontrado.");
+                showToast("Erro: ID do profissional não encontrado.");
                 return;
             }
             url += `&profissional_id=${profId}`;
@@ -924,7 +932,7 @@ async function exportarPDF(tipo = 'itens') {
         const response = await fetch(url);
         
         if (!response.ok) {
-            alert('Erro ao gerar relatório PDF.');
+            showToast('Erro ao gerar relatório PDF.');
             return;
         }
 
@@ -939,7 +947,7 @@ async function exportarPDF(tipo = 'itens') {
         window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
         console.error('Erro ao baixar o PDF:', error);
-        alert('Erro ao conectar com o servidor para baixar o PDF.');
+        showToast('Erro ao conectar com o servidor para baixar o PDF.');
     }
 }
 
@@ -1049,13 +1057,13 @@ async function salvarDisponibilidade() {
         }
 
         if (success) {
-            alert("Grade de horários salva com sucesso!");
+            showToast("Grade de horários salva com sucesso!");
         } else {
-            alert("Houve um erro ao salvar alguns horários.");
+            showToast("Houve um erro ao salvar alguns horários.");
         }
     } catch (error) {
         console.error("Erro ao salvar:", error);
-        alert("Erro de conexão ao salvar disponibilidade.");
+        showToast("Erro de conexão ao salvar disponibilidade.");
     } finally {
         if(btn) { btn.innerText = "Salvar Disponibilidade"; btn.disabled = false; }
     }
@@ -1094,7 +1102,7 @@ async function carregarLogs() {
         renderizarTabelaLogs(logs);
     } catch (error) {
         console.error('Erro ao carregar logs:', error);
-        alert('Erro ao carregar logs: ' + error.message);
+        showToast('Erro ao carregar logs: ' + error.message);
     }
 }
 
@@ -1163,7 +1171,7 @@ async function carregarEstatisticas() {
     // Proteção de rota no frontend
     const tipo = localStorage.getItem('tipo_usuario');
     if (tipo !== 'profissional') {
-        alert('Acesso restrito a gestores.');
+        showToast('Acesso restrito a gestores.');
         window.location.href = '/aluno/dashboard';
         return;
     }
@@ -1275,7 +1283,7 @@ async function carregarEstatisticas() {
 
     } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);
-        alert('Erro ao carregar estatísticas: ' + error.message);
+        showToast('Erro ao carregar estatísticas: ' + error.message);
     }
 }
 
@@ -1308,7 +1316,7 @@ function fecharModalProntuario() {
 
 async function salvarAtendimento(id) {
     const observacoes = document.getElementById('texto-prontuario').value;
-    if (!observacoes) return alert("Por favor, escreva o prontuário antes de finalizar.");
+    if (!observacoes) return showToast("Por favor, escreva o prontuário antes de finalizar.");
 
     try {
         const response = await fetch(`${API_URL}/agendamentos/${id}/status`, {
@@ -1318,11 +1326,11 @@ async function salvarAtendimento(id) {
         });
 
         if (response.ok) {
-            alert("Atendimento finalizado com sucesso!");
+            showToast("Atendimento finalizado com sucesso!");
             fecharModalProntuario();
             carregarDashboardProfissional();
         } else {
-            alert("Erro ao finalizar atendimento.");
+            showToast("Erro ao finalizar atendimento.");
         }
     } catch (error) {
         console.error("Erro:", error);
@@ -1345,4 +1353,39 @@ function verProntuario(texto) {
         </div>
     `;
     document.body.appendChild(modal);
+}
+
+/** =========================================================
+ * SISTEMA DE NOTIFICAÇÕES (TOASTS)
+ * ========================================================= */
+function showToast(message, type = 'success') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // Ícones dinâmicos
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+
+    toast.innerHTML = `<span>${icons[type] || '🔔'}</span> <span>${message}</span>`;
+    
+    // Click para fechar rápido
+    toast.onclick = () => toast.remove();
+
+    container.appendChild(toast);
+
+    // Auto-remove após 3 segundos
+    setTimeout(() => {
+        if (toast.parentNode) toast.remove();
+    }, 3000);
 }
