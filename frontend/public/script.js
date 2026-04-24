@@ -5,6 +5,11 @@
 
 const API_URL = '/api';
 
+// Variáveis globais para armazenar dados originais para filtragem local
+let originalAgendamentos = [];
+let originalItens = [];
+let originalLogs = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     const formLogin = document.getElementById('form-login');
     if (formLogin) {
@@ -286,45 +291,75 @@ async function carregarDashboardProfissional() {
     try {
         const response = await fetch(`${API_URL}/agendamentos/profissional/${profId}`);
         const pacientes = await response.json();
-
-        tbody.innerHTML = '';
-        if (pacientes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum paciente agendado para este mês.</td></tr>';
-            return;
-        }
-
-        let atendidos = 0;
-        let aguardando = 0;
-
-        pacientes.forEach(p => {
-            if (p.status === 'Atendido') atendidos++;
-            else if (p.status === 'Confirmado' || p.status === 'Pendente') aguardando++;
-
-            const dataFormatada = p.data ? p.data.split('-').reverse().join('/') : 'N/A';
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${p.usuarios.nome}</td>
-                <td>${dataFormatada}</td>
-                <td>${p.hora}</td>
-                <td>${p.especialidade}</td>
-                <td><span class="badge ${p.status === 'Atendido' ? 'active' : (p.status === 'Pendente' ? 'warning' : '')}">${p.status}</span></td>
-                <td>
-                    ${p.status !== 'Atendido' ? `
-                        <button onclick="mudarStatus('${p.id}', 'Atendido')" class="btn-green" style="padding: 2px 8px; font-size: 0.8rem;">Atender</button>
-                        <button onclick="mudarStatus('${p.id}', 'Cancelado')" style="background:none; border:none; cursor:pointer;" title="Recusar">&#x274c;</button>
-                    ` : '---'}
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        document.getElementById('stat-atendidos').innerText = atendidos;
-        document.getElementById('stat-aguardando').innerText = aguardando;
-        if(document.getElementById('stat-faltas')) document.getElementById('stat-faltas').innerText = "0";
+        originalAgendamentos = pacientes;
+        renderizarTabelaProfissional(pacientes);
 
     } catch (error) {
         console.error('Erro ao carregar dashboard profissional:', error);
     }
+}
+
+function renderizarTabelaProfissional(pacientes) {
+    const tbody = document.getElementById('lista-pacientes-hoje');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    if (pacientes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum agendamento encontrado para os filtros selecionados.</td></tr>';
+        return;
+    }
+
+    let atendidos = 0;
+    let aguardando = 0;
+
+    pacientes.forEach(p => {
+        if (p.status === 'Atendido') atendidos++;
+        else if (p.status === 'Confirmado' || p.status === 'Pendente') aguardando++;
+
+        const dataFormatada = p.data ? p.data.split('-').reverse().join('/') : 'N/A';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${p.usuarios ? p.usuarios.nome : 'N/A'}</td>
+            <td>${dataFormatada}</td>
+            <td>${p.hora}</td>
+            <td>${p.especialidade}</td>
+            <td><span class="badge ${p.status === 'Atendido' ? 'active' : (p.status === 'Pendente' ? 'warning' : '')}">${p.status}</span></td>
+            <td>
+                ${p.status !== 'Atendido' ? `
+                    <button onclick="mudarStatus('${p.id}', 'Atendido')" class="btn-green" style="padding: 2px 8px; font-size: 0.8rem;">Atender</button>
+                    <button onclick="mudarStatus('${p.id}', 'Cancelado')" style="background:none; border:none; cursor:pointer;" title="Recusar">&#x274c;</button>
+                ` : '---'}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if(document.getElementById('stat-atendidos')) document.getElementById('stat-atendidos').innerText = atendidos;
+    if(document.getElementById('stat-aguardando')) document.getElementById('stat-aguardando').innerText = aguardando;
+}
+
+function filtrarAgendamentosProfissional() {
+    const dia = document.getElementById('filtro-dia')?.value;
+    const mes = document.getElementById('filtro-mes')?.value;
+    const ano = document.getElementById('filtro-ano')?.value;
+    const status = document.getElementById('filtro-status')?.value;
+
+    let filtrados = originalAgendamentos;
+
+    if (dia) {
+        filtrados = filtrados.filter(a => a.data.split('-')[2] === dia.padStart(2, '0'));
+    }
+    if (mes) {
+        filtrados = filtrados.filter(a => a.data.split('-')[1] === mes.padStart(2, '0'));
+    }
+    if (ano) {
+        filtrados = filtrados.filter(a => a.data.split('-')[0] === ano);
+    }
+    if (status) {
+        filtrados = filtrados.filter(a => a.status === status);
+    }
+
+    renderizarTabelaProfissional(filtrados);
 }
 
 async function mudarStatus(id, novoStatus) {
@@ -580,34 +615,61 @@ async function carregarAgendamentosAluno() {
         const usuarioId = localStorage.getItem('usuario_id');
         const response = await fetch(`${API_URL}/agendamentos/usuario/${usuarioId}`);
         const agendamentos = await response.json();
-
-        tbody.innerHTML = '';
-        if (agendamentos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum agendamento encontrado.</td></tr>';
-            return;
-        }
-
-        agendamentos.forEach(a => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${a.especialidade}</td>
-                <td>${a.data}</td>
-                <td>${a.hora}</td>
-                <td>${a.usuarios ? a.usuarios.nome : 'N/A'}</td>
-                <td style="font-weight:bold;">${a.status}</td>
-                <td>
-                    ${a.status === 'Pendente' ? `<button onclick="mudarStatus('${a.id}', 'Cancelado')" style="border:none; background:transparent; cursor:pointer;" title="Cancelar">&#x1f5d1;</button>` : '---'}
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-        
-        document.getElementById('total-consultas').innerText = agendamentos.length;
-        document.getElementById('total-pendente').innerText = agendamentos.filter(a => a.status === 'Pendente').length;
+        originalAgendamentos = agendamentos;
+        renderizarTabelaAluno(agendamentos);
 
     } catch (error) {
         console.error('Erro ao carregar agendamentos aluno:', error);
     }
+}
+
+function renderizarTabelaAluno(agendamentos) {
+    const tbody = document.getElementById('tabela-agendamentos');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    if (agendamentos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum agendamento encontrado para os filtros selecionados.</td></tr>';
+        return;
+    }
+
+    agendamentos.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${a.especialidade}</td>
+            <td>${a.data}</td>
+            <td>${a.hora}</td>
+            <td>${a.usuarios ? a.usuarios.nome : 'N/A'}</td>
+            <td style="font-weight:bold;">${a.status}</td>
+            <td>
+                ${a.status === 'Pendente' ? `<button onclick="mudarStatus('${a.id}', 'Cancelado')" style="border:none; background:transparent; cursor:pointer;" title="Cancelar">&#x1f5d1;</button>` : '---'}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    if(document.getElementById('total-consultas')) document.getElementById('total-consultas').innerText = agendamentos.length;
+    if(document.getElementById('total-pendente')) document.getElementById('total-pendente').innerText = agendamentos.filter(a => a.status === 'Pendente').length;
+}
+
+function filtrarAgendamentosAluno() {
+    const mes = document.getElementById('filtro-mes')?.value;
+    const ano = document.getElementById('filtro-ano')?.value;
+    const status = document.getElementById('filtro-status')?.value;
+
+    let filtrados = originalAgendamentos;
+
+    if (mes) {
+        filtrados = filtrados.filter(a => a.data.split('-')[1] === mes.padStart(2, '0'));
+    }
+    if (ano) {
+        filtrados = filtrados.filter(a => a.data.split('-')[0] === ano);
+    }
+    if (status) {
+        filtrados = filtrados.filter(a => a.status === status);
+    }
+
+    renderizarTabelaAluno(filtrados);
 }
 
 /** =========================================================
@@ -620,23 +682,55 @@ async function carregarItens() {
     try {
         const response = await fetch(`${API_URL}/itens`);
         const itens = await response.json();
-        tbody.innerHTML = '';
-        itens.forEach(item => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${item.codigo}</td>
-                <td>${item.nome}</td>
-                <td>${item.descricao || 'N/A'}</td>
-                <td>${item.quantidade}</td>
-                <td><span class="badge active">${item.status}</span></td>
-                <td><button onclick="deletarItem('${item.id}')" style="background:none; border:none; cursor:pointer;">&#x1f5d1;</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-        if (document.getElementById('total-itens')) document.getElementById('total-itens').innerText = itens.length;
+        originalItens = itens;
+        renderizarTabelaItens(itens);
     } catch (error) {
         console.error(error);
     }
+}
+
+function renderizarTabelaItens(itens) {
+    const tbody = document.getElementById('tabela-itens');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    if (itens.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum item encontrado.</td></tr>';
+        return;
+    }
+
+    itens.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${item.codigo}</td>
+            <td>${item.nome}</td>
+            <td>${item.descricao || 'N/A'}</td>
+            <td>${item.quantidade}</td>
+            <td><span class="badge active">${item.status}</span></td>
+            <td><button onclick="deletarItem('${item.id}')" style="background:none; border:none; cursor:pointer;">&#x1f5d1;</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+    if (document.getElementById('total-itens')) document.getElementById('total-itens').innerText = itens.length;
+}
+
+function filtrarItens() {
+    const busca = document.getElementById('filtro-busca')?.value.toLowerCase();
+    const status = document.getElementById('filtro-status')?.value;
+
+    let filtrados = originalItens;
+
+    if (busca) {
+        filtrados = filtrados.filter(i => 
+            i.nome.toLowerCase().includes(busca) || 
+            i.codigo.toLowerCase().includes(busca)
+        );
+    }
+    if (status) {
+        filtrados = filtrados.filter(i => i.status === status);
+    }
+
+    renderizarTabelaItens(filtrados);
 }
 
 async function deletarItem(id) {
@@ -744,10 +838,13 @@ async function carregarSetupProfissional() {
             const tr = document.createElement('tr');
             let html = `<td class="horario-col"><span class="label-horario">${horario}</span></td>`;
 
+            let todasMarcadas = true;
             diasSemana.forEach(dia => {
                 const jaExiste = disponibilidades.find(
                     d => d.profissional_id === profId && d.dia_semana === dia && d.horarios.includes(horario)
                 );
+                
+                if (!jaExiste) todasMarcadas = false;
 
                 html += `
                     <td style="text-align: center;">
@@ -755,6 +852,13 @@ async function carregarSetupProfissional() {
                     </td>
                 `;
             });
+
+            // Coluna "Todas" para marcar a linha inteira
+            html += `
+                <td style="text-align: center; background: #f0fdf4;">
+                    <input type="checkbox" class="chk-linha-toda" onclick="marcarLinhaToda('${horario}', this)" ${todasMarcadas ? 'checked' : ''}>
+                </td>
+            `;
 
             tr.innerHTML = html;
             matrizTbody.appendChild(tr);
@@ -823,8 +927,93 @@ async function salvarDisponibilidade() {
 
 function selecionarTodos() {
     document.querySelectorAll('.chk-disponibilidade').forEach(chk => chk.checked = true);
+    document.querySelectorAll('.chk-linha-toda').forEach(chk => chk.checked = true);
 }
 
 function deselecionarTodos() {
     document.querySelectorAll('.chk-disponibilidade').forEach(chk => chk.checked = false);
+    document.querySelectorAll('.chk-linha-toda').forEach(chk => chk.checked = false);
+}
+
+function marcarLinhaToda(horario, checkboxMestre) {
+    const checkboxesDaLinha = document.querySelectorAll(`.chk-disponibilidade[data-horario="${horario}"]`);
+    checkboxesDaLinha.forEach(chk => {
+        chk.checked = checkboxMestre.checked;
+    });
+}
+
+/** =========================================================
+ * LOGS DE SISTEMA
+ * ========================================================= */
+async function carregarLogs() {
+    const tbody = document.getElementById('tabela-logs');
+    if (!tbody) return;
+
+    try {
+        // Simulação ou busca real de logs
+        const response = await fetch(`${API_URL}/logs`);
+        const logs = await response.json();
+        originalLogs = logs;
+        renderizarTabelaLogs(logs);
+    } catch (error) {
+        console.error('Erro ao carregar logs:', error);
+    }
+}
+
+function renderizarTabelaLogs(logs) {
+    const tbody = document.getElementById('tabela-logs');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum log encontrado para os filtros selecionados.</td></tr>';
+        return;
+    }
+
+    logs.forEach(log => {
+        const tr = document.createElement('tr');
+        // Formatar data: 2026-03-05T10:00:00 -> 05/03/2026 10:00
+        const dataObj = new Date(log.created_at);
+        const dataFormatada = dataObj.toLocaleString('pt-BR');
+
+        tr.innerHTML = `
+            <td>${dataFormatada}</td>
+            <td>${log.usuario_nome || 'Sistema'}</td>
+            <td>${log.acao}</td>
+            <td>${log.detalhes || '---'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function filtrarLogs() {
+    const dataFiltro = document.getElementById('dataFiltro')?.value;
+    const acao = document.getElementById('filtro-acao')?.value.toLowerCase();
+
+    let filtrados = originalLogs;
+
+    if (dataFiltro) {
+        filtrados = filtrados.filter(log => log.created_at.startsWith(dataFiltro));
+    }
+    if (acao) {
+        filtrados = filtrados.filter(log => log.acao.toLowerCase().includes(acao));
+    }
+
+    renderizarTabelaLogs(filtrados);
+}
+
+function limparFiltros(tipo) {
+    if (tipo === 'agendamentos-aluno') {
+        document.querySelectorAll('.filter-input').forEach(i => i.value = '');
+        renderizarTabelaAluno(originalAgendamentos);
+    } else if (tipo === 'agendamentos-prof') {
+        document.querySelectorAll('.filter-input').forEach(i => i.value = '');
+        renderizarTabelaProfissional(originalAgendamentos);
+    } else if (tipo === 'itens') {
+        document.querySelectorAll('.filter-input').forEach(i => i.value = '');
+        renderizarTabelaItens(originalItens);
+    } else if (tipo === 'logs') {
+        document.querySelectorAll('.filter-input').forEach(i => i.value = '');
+        renderizarTabelaLogs(originalLogs);
+    }
 }

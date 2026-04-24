@@ -501,3 +501,75 @@ body {
     width: 200px;
     font-size: 0.9rem;
 }
+
+/* ========================================================
+   FILTROS DE TABELA
+   ======================================================== */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+    align-items: flex-end;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.filter-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    outline: none;
+    background: #f9f9f9;
+    transition: border-color 0.2s;
+    min-width: 120px;
+}
+
+.filter-input:focus {
+    border-color: var(--green-primary);
+}
+
+.btn-filter {
+    background: var(--green-primary);
+    color: white;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-filter:hover {
+    background: var(--green-dark);
+}
+
+.btn-clear {
+    background: #eee;
+    color: #444;
+    border: 1px solid #ccc;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+}

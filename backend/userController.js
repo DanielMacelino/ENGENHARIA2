@@ -273,39 +273,133 @@ export const generatePDF = async (req, res) => {
             dadosItens = itens;
         }
 
-        // Se chegou até aqui sem erros, configura o PDF
-        const doc = new PDFDocument();
+        // Configuração do Documento
+        const doc = new PDFDocument({ margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=relatorio_${tipo || 'itens'}.pdf`);
         doc.pipe(res);
 
+        // Cores e Estilos
+        const greenPrimary = '#1e6d38';
+        const grayText = '#666666';
+
+        // --- CABEÇALHO ---
+        doc.rect(0, 0, 612, 100).fill(greenPrimary);
+        doc.fillColor('#ffffff')
+           .fontSize(18)
+           .text("SISTEMA DE AGENDAMENTO - IFCE", 50, 40)
+           .fontSize(10)
+           .text("Relatório Gerencial do Posto de Saúde - Campus Crato", 50, 65);
+        
+        doc.fillColor('#ffffff')
+           .fontSize(8)
+           .text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, 450, 75);
+
+        doc.moveDown(5);
+        doc.fillColor('#333333');
+
         if (tipo === 'agendamentos') {
-            doc.fontSize(20).text("Relatório de Agendamentos (Mês Atual)", { align: 'center' });
-            doc.moveDown();
+            // --- TÍTULO DA SEÇÃO ---
+            doc.fontSize(16).fillColor(greenPrimary).text("Relatório de Agendamentos (Mês Atual)", 50, 120);
+            doc.moveDown(0.5);
+            doc.strokeColor(greenPrimary).lineWidth(1).moveTo(50, 140).lineTo(550, 140).stroke();
+            doc.moveDown(1.5);
 
             if (dadosAgendamentos && dadosAgendamentos.length > 0) {
-                dadosAgendamentos.forEach(a => {
+                // Cabeçalho da Tabela
+                doc.fontSize(10).fillColor(grayText);
+                doc.text("DATA", 50, 160);
+                doc.text("HORA", 120, 160);
+                doc.text("PACIENTE", 180, 160);
+                doc.text("ESPECIALIDADE", 350, 160);
+                doc.text("STATUS", 480, 160);
+                
+                doc.moveDown(0.5);
+                let y = 180;
+
+                dadosAgendamentos.forEach((a, index) => {
                     const nomePaciente = a.usuarios ? a.usuarios.nome : 'N/A';
                     const dataFormatada = a.data ? a.data.split('-').reverse().join('/') : 'N/A';
-                    doc.fontSize(12).text(`- ${dataFormatada} às ${a.hora} | Paciente: ${nomePaciente} | Status: ${a.status}`);
-                    doc.moveDown(0.5);
+
+                    // Zebra striping
+                    if (index % 2 === 0) {
+                        doc.rect(50, y - 5, 500, 20).fill('#f9f9f9');
+                    }
+
+                    doc.fillColor('#333333').fontSize(9);
+                    doc.text(dataFormatada, 50, y);
+                    doc.text(a.hora, 120, y);
+                    doc.text(nomePaciente, 180, y, { width: 160 });
+                    doc.text(a.especialidade, 350, y);
+                    doc.text(a.status, 480, y);
+
+                    y += 20;
+
+                    // Quebra de página automática
+                    if (y > 700) {
+                        doc.addPage();
+                        y = 50;
+                    }
                 });
+                
+                doc.moveDown(2);
+                doc.fontSize(10).fillColor(greenPrimary).text(`Total de agendamentos no período: ${dadosAgendamentos.length}`, { align: 'right' });
+
             } else {
-                doc.fontSize(12).text("Nenhum agendamento para o mês atual.", { align: 'center' });
+                doc.fontSize(12).text("Nenhum agendamento encontrado para o profissional no mês atual.", { align: 'center' });
             }
         } else {
-            doc.fontSize(20).text("Relatório de Itens do Sistema", { align: 'center' });
-            doc.moveDown();
+            // --- RELATÓRIO DE ITENS ---
+            doc.fontSize(16).fillColor(greenPrimary).text("Inventário Geral de Itens", 50, 120);
+            doc.moveDown(0.5);
+            doc.strokeColor(greenPrimary).lineWidth(1).moveTo(50, 140).lineTo(550, 140).stroke();
+            doc.moveDown(1.5);
 
             if (dadosItens && dadosItens.length > 0) {
-                dadosItens.forEach(item => {
-                    doc.fontSize(12).text(`- ${item.nome} (Código: ${item.codigo}) | Qtd: ${item.quantidade} | Status: ${item.status}`);
-                    if (item.descricao) doc.fontSize(10).text(`  Descrição: ${item.descricao}`);
-                    doc.moveDown(0.5);
+                doc.fontSize(10).fillColor(grayText);
+                doc.text("CÓDIGO", 50, 160);
+                doc.text("ITEM / NOME", 120, 160);
+                doc.text("QUANTIDADE", 350, 160);
+                doc.text("STATUS", 480, 160);
+
+                let y = 180;
+
+                dadosItens.forEach((item, index) => {
+                    if (index % 2 === 0) {
+                        doc.rect(50, y - 5, 500, 25).fill('#f9f9f9');
+                    }
+
+                    doc.fillColor('#333333').fontSize(9);
+                    doc.text(item.codigo, 50, y);
+                    doc.text(item.nome, 120, y, { width: 220 });
+                    doc.text(item.quantidade.toString(), 350, y, { align: 'center', width: 60 });
+                    doc.text(item.status, 480, y);
+
+                    y += 25;
+
+                    if (y > 700) {
+                        doc.addPage();
+                        y = 50;
+                    }
                 });
+
+                doc.moveDown(2);
+                doc.fontSize(10).fillColor(greenPrimary).text(`Total de itens cadastrados: ${dadosItens.length}`, { align: 'right' });
             } else {
-                doc.fontSize(12).text("Nenhum item cadastrado.", { align: 'center' });
+                doc.fontSize(12).text("Nenhum item cadastrado no sistema.", { align: 'center' });
             }
+        }
+
+        // Rodapé
+        const range = doc.bufferedPageRange();
+        for (let i = range.start; i < range.start + range.count; i++) {
+            doc.switchToPage(i);
+            doc.fontSize(8).fillColor('#999999').text(
+                `Página ${i + 1} de ${range.count} - IFCE Campus Crato`,
+                50,
+                750,
+                { align: 'center' }
+            );
         }
 
         doc.end();

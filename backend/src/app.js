@@ -49,4 +49,15 @@ app.get("/profissional/informacoes", (req, res) => res.sendFile(path.join(views,
 app.get("/profissional/mapa", (req, res) => res.sendFile(path.join(views, "mapa.html")));
 app.get("/profissional/logs", (req, res) => res.sendFile(path.join(views, "logs.html")));
 
+// Rota temporária para semear dados (Seed)
+import { seedDatabase } from "./seedLogic.js";
+app.get("/api/seed", async (req, res) => {
+    try {
+        await seedDatabase();
+        res.json({ message: "Banco de dados semeado com sucesso!" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default app;

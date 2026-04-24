@@ -57,24 +57,38 @@
                 <div style="margin-bottom: 20px;">
                     <label>Origem (Ponto A):</label>
                     <select id="coord-a" class="input-latlong">
-                        <option value="-7.230659,-39.413709">IFCE Campus Crato</option>
-                        <option value="-7.228245,-39.410574">Posto de Saúde do Crato (Postinho)</option>
-                        <option value="-7.230099,-39.408595">Hospital São José do Crato</option>
-                        <option value="-7.230731,-39.307469">Hospital Regional do Cariri (HRC)</option>
-                        <option value="-7.232789,-39.411123">Clínica São Lucas</option>
-                        <option value="-7.225456,-39.408091">Clínica Santa Tereza</option>
+                        <option value="-7.205255889483235,-39.447984022263846">IFCE Campus Crato</option>
+                        <option value="-7.236277784487178,-39.41552189732047">Maternidade e Pediatria - Hospital São Camilo</option>
+                        <option value="-7.2369376737045785,-39.41527647520314">Hospital e Maternidade São Francisco de Assis</option>
+                        <option value="-7.237576275264925,-39.41560839856295">Hemocentro Regional de Crato (I)</option>
+                        <option value="-7.239780108899052,-39.417934544255516">Hemocentro Regional de Crato (II)</option>
+                        <option value="-7.238186271955171,-39.41493717566113">Centro de Saúde São Camilo</option>
+                        <option value="-7.236364927193387,-39.40935683978836">Centro de Especialidades do Crato</option>
+                        <option value="-7.231040544842895,-39.40689725417758">Hospital São Raimundo</option>
+                        <option value="-7.230591521721846,-39.40654186149573">UniRim - Unidade de Diálise</option>
+                        <option value="-7.230191724459824,-39.40456239123358">UPAA LESSA - Pet</option>
+                        <option value="-7.229201875481381,-39.40396023530788">Centro Municipal De Infectologia</option>
+                        <option value="-7.2325306332716295,-39.39473075402893">Policlínica Regional do Crato</option>
+                        <option value="-7.238333948390104,-39.31692791725572">UPA Lagoa Seca</option>
                     </select>
                 </div>
 
                 <div style="margin-bottom: 20px;">
                     <label>Destino (Ponto B):</label>
                     <select id="coord-b" class="input-latlong">
-                        <option value="-7.230659,-39.413709">IFCE Campus Crato</option>
-                        <option value="-7.228245,-39.410574">Posto de Saúde do Crato (Postinho)</option>
-                        <option value="-7.230099,-39.408595" selected>Hospital São José do Crato</option>
-                        <option value="-7.230731,-39.307469">Hospital Regional do Cariri (HRC)</option>
-                        <option value="-7.232789,-39.411123">Clínica São Lucas</option>
-                        <option value="-7.225456,-39.408091">Clínica Santa Tereza</option>
+                        <option value="-7.205255889483235,-39.447984022263846">IFCE Campus Crato</option>
+                        <option value="-7.236277784487178,-39.41552189732047">Maternidade e Pediatria - Hospital São Camilo</option>
+                        <option value="-7.2369376737045785,-39.41527647520314">Hospital e Maternidade São Francisco de Assis</option>
+                        <option value="-7.237576275264925,-39.41560839856295">Hemocentro Regional de Crato (I)</option>
+                        <option value="-7.239780108899052,-39.417934544255516">Hemocentro Regional de Crato (II)</option>
+                        <option value="-7.238186271955171,-39.41493717566113" selected>Centro de Saúde São Camilo</option>
+                        <option value="-7.236364927193387,-39.40935683978836">Centro de Especialidades do Crato</option>
+                        <option value="-7.231040544842895,-39.40689725417758">Hospital São Raimundo</option>
+                        <option value="-7.230591521721846,-39.40654186149573">UniRim - Unidade de Diálise</option>
+                        <option value="-7.230191724459824,-39.40456239123358">UPAA LESSA - Pet</option>
+                        <option value="-7.229201875481381,-39.40396023530788">Centro Municipal De Infectologia</option>
+                        <option value="-7.2325306332716295,-39.39473075402893">Policlínica Regional do Crato</option>
+                        <option value="-7.238333948390104,-39.31692791725572">UPA Lagoa Seca</option>
                     </select>
                 </div>
 
@@ -94,20 +108,36 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Atrasar levemente a renderização do mapa para garantir que a div tem tamanho
             setTimeout(() => {
-                const map = L.map('map').setView([-7.230659, -39.413709], 14);
+                const map = L.map('map').setView([-7.225255889483235, -39.417984022263846], 13);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
-                const ifceMarker = L.marker([-7.230659, -39.413709]).addTo(map);
-                ifceMarker.bindPopup('<strong style="color:green;">IFCE Campus Crato</strong><br>Ponto Principal').openPopup();
+                const markers = [
+                    { coords: [-7.205255889483235, -39.447984022263846], title: 'IFCE Campus Crato', isMain: true },
+                    { coords: [-7.236277784487178, -39.41552189732047], title: 'Maternidade e Pediatria - Hospital São Camilo' },
+                    { coords: [-7.2369376737045785, -39.41527647520314], title: 'Hospital e Maternidade São Francisco de Assis' },
+                    { coords: [-7.237576275264925, -39.41560839856295], title: 'Hemocentro Regional de Crato (I)' },
+                    { coords: [-7.239780108899052, -39.417934544255516], title: 'Hemocentro Regional de Crato (II)' },
+                    { coords: [-7.238186271955171, -39.41493717566113], title: 'Centro de Saúde São Camilo' },
+                    { coords: [-7.236364927193387, -39.40935683978836], title: 'Centro de Especialidades do Crato' },
+                    { coords: [-7.231040544842895, -39.40689725417758], title: 'Hospital São Raimundo' },
+                    { coords: [-7.230591521721846, -39.40654186149573], title: 'UniRim - Unidade de Diálise' },
+                    { coords: [-7.230191724459824, -39.40456239123358], title: 'UPAA LESSA - Pet' },
+                    { coords: [-7.229201875481381, -39.40396023530788], title: 'Centro Municipal De Infectologia' },
+                    { coords: [-7.2325306332716295, -39.39473075402893], title: 'Policlínica Regional do Crato' },
+                    { coords: [-7.238333948390104, -39.31692791725572], title: 'UPA Lagoa Seca' }
+                ];
 
-                L.marker([-7.228245, -39.410574]).addTo(map).bindPopup('<b>Posto de Saúde do Crato (Postinho)</b>');
-                L.marker([-7.230099, -39.408595]).addTo(map).bindPopup('<b>Hospital São José do Crato</b>');
-                L.marker([-7.230731, -39.307469]).addTo(map).bindPopup('<b>Hospital Regional do Cariri (HRC)</b>');
-                L.marker([-7.232789, -39.411123]).addTo(map).bindPopup('<b>Clínica São Lucas</b>');
-                L.marker([-7.225456, -39.408091]).addTo(map).bindPopup('<b>Clínica Santa Tereza</b>');
+                markers.forEach(m => {
+                    const marker = L.marker(m.coords).addTo(map);
+                    if (m.isMain) {
+                        marker.bindPopup(`<strong style="color:green;">${m.title}</strong><br>Ponto Principal`).openPopup();
+                    } else {
+                        marker.bindPopup(`<b>${m.title}</b>`);
+                    }
+                });
                 map.invalidateSize();
             }, 100);
         });

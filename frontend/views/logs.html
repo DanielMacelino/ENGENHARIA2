@@ -62,16 +62,18 @@
             <p class="page-subtitle">Acompanhamento e auditoria do sistema em tempo real.</p>
 
             <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap;">
-                    <h3 style="color: #444; margin-bottom: 10px;">Relatório de Ações</h3>
-                    <div style="display:flex; gap:10px; align-items: center;">
-                        <label for="dataFiltro" style="font-size: 0.9rem;">Filtrar por data:</label>
-                        <input type="date" id="dataFiltro" value="2026-03-05"
-                            style="padding: 6px; border-radius:4px; border:1px solid #ccc; outline:none;">
-                        <button onclick="filtrarLogs()" class="btn-green"
-                            style="font-size: 0.85rem; padding: 6px 15px;">&#x1f50d; Filtrar</button>
-                    </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Data</label>
+                    <input type="date" id="dataFiltro" class="filter-input">
                 </div>
+                <div class="filter-group" style="flex: 1;">
+                    <label>Ação / Detalhes</label>
+                    <input type="text" id="filtro-acao" class="filter-input" placeholder="Pesquisar ação..." style="width: 100%;">
+                </div>
+                <button onclick="filtrarLogs()" class="btn-filter">&#x1f50d; Filtrar</button>
+                <button onclick="limparFiltros('logs')" class="btn-clear">Limpar</button>
+            </div>
 
                 <div class="table-responsive" style="margin-top: 20px;">
                     <table class="table-custom">
