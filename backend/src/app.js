@@ -12,11 +12,8 @@ const publico = path.join(__dirname, "../../frontend/public");
 
 const app = express();
 
-// CORS rigoroso permitindo apenas requisições da mesma origem (localhost:3000)
-app.use(cors({
-    origin: 'http://localhost:3000',
-    optionsSuccessStatus: 200
-}));
+// CORS - Permitindo origens para produção (Vercel) e desenvolvimento
+app.use(cors());
 app.use(express.json());
 // Suporte a arquivos via urlencoded (para multer)
 app.use(express.urlencoded({ extended: true }));
