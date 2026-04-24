@@ -7,8 +7,10 @@ import router from "./routes/userRoutes.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const views = path.join(__dirname, "../../frontend/views");
-const publico = path.join(__dirname, "../../frontend/public");
+const views = path.join(process.cwd(), "frontend/views");
+const publico = path.join(process.cwd(), "frontend/public");
+const staticRoot = path.join(process.cwd(), "frontend");
+const uploads = path.join(process.cwd(), "backend/uploads");
 
 const app = express();
 
@@ -19,12 +21,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Servindo arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, "../../frontend")));
+app.use(express.static(staticRoot));
 app.use("/public", express.static(publico));
 app.use("/api", router);
 
-// Servindo arquivos de upload locais (preparação para Supabase)
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// Servindo arquivos de upload locais
+app.use("/uploads", express.static(uploads));
 
 // Rotas de Autenticação
 app.get("/", (req, res) => res.sendFile(path.join(views, "login.html")));
