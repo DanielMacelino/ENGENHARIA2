@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Consulta - IFCE</title>
+    <script src="/config.js"></script>
+    <link rel="stylesheet" href="/public/style.css">
+    <style>
+        .agendamento-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .novo-agendamento-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-top: 6px solid var(--green-primary);
+        }
+        .form-step {
+            margin-bottom: 25px;
+        }
+        .form-step label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        .form-control {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #edf2f7;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--green-primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(30, 109, 56, 0.1);
+        }
+        .horarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn-horario {
+            padding: 15px 10px;
+            border: 2px solid #edf2f7;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+        .btn-horario:hover:not(:disabled) {
+            border-color: var(--green-primary);
+            color: var(--green-primary);
+            background: #f0fdf4;
+        }
+        .btn-horario.selected {
+            background: var(--green-primary);
+            color: white;
+            border-color: var(--green-primary);
+            transform: scale(1.05);
+        }
+        .btn-horario:disabled {
+            background: #f1f5f9;
+            color: #cbd5e0;
+            cursor: not-allowed;
+            border-color: #f1f5f9;
+        }
+        .confirmation-area {
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 2px dashed #edf2f7;
+            text-align: center;
+            display: none;
+        }
+        .confirmation-area.visible {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .resumo-texto {
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: #4a5568;
+        }
+        .resumo-texto strong {
+            color: var(--green-primary);
+        }
+        .btn-confirmar-final {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(30, 109, 56, 0.2);
+        }
+    </style>
+</head>
+
+<body onload="inicializarNovaPaginaAgendamento()">
+
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo-header">
+                <img src="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/images-removebg-preview%20(1).png" alt="Logo IFCE">
+            </div>
+            <div class="header-titles">
+                <h1>Agendamento de Consulta</h1>
+                <h2>Campus Crato</h2>
+            </div>
+        </div>
+        <a href="/login" class="btn-header-sair">Sair &#x21e8;</a>
+    </header>
+
+    <div class="main-wrapper">
+        <aside id="sidebar-container" class="sidebar"></aside>
+
+        <main class="content-area">
+            <div class="agendamento-container">
+                <div class="page-title">Nova Solicitação</div>
+                <p class="page-subtitle">Siga os passos abaixo para marcar seu atendimento.</p>
+
+                <div class="novo-agendamento-card">
+                    <!-- PASSO 1: ESPECIALIDADE -->
+                    <div class="form-step">
+                        <label>1. O que você precisa?</label>
+                        <select id="sel-especialidade" class="form-control" onchange="atualizarSlotsAutomaticos()">
+                            <option value="">-- Selecione a Especialidade --</option>
+                            <option value="Clínico Geral">Clínico Geral</option>
+                            <option value="Dentista">Dentista / Odontologia</option>
+                            <option value="Psicólogo">Psicologia</option>
+                            <option value="Enfermagem">Enfermagem</option>
+                            <option value="Pediatria">Pediatria</option>
+                            <option value="Cardiologia">Cardiologia</option>
+                        </select>
+                    </div>
+
+                    <!-- PASSO 2: DATA -->
+                    <div class="form-step">
+                        <label>2. Para quando?</label>
+                        <input type="date" id="data-agendamento" class="form-control" onchange="atualizarSlotsAutomaticos()">
+                    </div>
+
+                    <!-- PASSO 3: HORÁRIO -->
+                    <div id="section-horarios" class="form-step" style="display:none;">
+                        <label>3. Escolha o horário disponível:</label>
+                        <div id="grid-horarios" class="horarios-grid">
+                            <!-- Injetado via JS -->
+                        </div>
+                    </div>
+
+                    <!-- CONFIRMAÇÃO -->
+                    <div id="area-confirmacao" class="confirmation-area" style="display: block; opacity: 0.5; pointer-events: none;">
+                        <div class="resumo-texto">
+                            Selecione um horário para habilitar a confirmação.
+                        </div>
+                        <button id="btn-final-confirm" onclick="confirmarAgendamentoSimplificado()" class="btn-green btn-confirmar-final" disabled>
+                            ✓ AGENDAR CONSULTA
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px; text-align: center;">
+                    <a href="/aluno/dashboard" style="color: #a0aec0; text-decoration: none; font-size: 0.9rem;">
+                        &#x2190; Cancelar e voltar para o início
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/public/script.js"></script>
+    <script>
+        function inicializarNovaPaginaAgendamento() {
+            const inputData = document.getElementById('data-agendamento');
+            if (inputData) {
+                const hoje = new Date();
+                const daqui30Dias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+                inputData.min = hoje.toISOString().split('T')[0];
+                inputData.max = daqui30Dias.toISOString().split('T')[0];
+            }
+        }
+    </script>
+</body>
+
+</html>

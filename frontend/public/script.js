@@ -62,7 +62,8 @@ function renderSidebar() {
 
     if (tipo === 'aluno') {
         menuHTML += `
-            <li><a href="/aluno/dashboard" class="${path === '/aluno/dashboard' ? 'active' : ''}"><span style="color:gray">&#x1f3e0;</span> Home</a></li>
+            <li><a href="/aluno/dashboard" class="${path === '/aluno/dashboard' ? 'active' : ''}"><span style="color:gray">&#x1f3e0;</span> Home / Início</a></li>
+            <li><a href="/aluno/novo-agendamento" class="${path === '/aluno/novo-agendamento' ? 'active' : ''}"><span style="color:var(--green-primary);">&#x2795;</span> Agendar Consulta</a></li>
             <li><a href="/aluno/agendamentos" class="${path === '/aluno/agendamentos' ? 'active' : ''}"><span style="color:gray;">&#x1f4c5;</span> Meus Agendamentos</a></li>
             <li><a href="/aluno/mapa" class="${path === '/aluno/mapa' ? 'active' : ''}"><span style="color:gray;">&#x1f4cd;</span> Mapa e Distância</a></li>
             <li><a href="/aluno/informacoes" class="${path === '/aluno/informacoes' ? 'active' : ''}"><span style="color:gray;">&#x1f4da;</span> Informações Acadêmicas</a></li>
@@ -537,158 +538,180 @@ async function inicializarFormularioAgendamento() {
     }
 }
 
-async function atualizarProfissionaisFiltrados() {
+/** =========================================================
+ * AGENDAMENTO SIMPLIFICADO (REQUISITOS NOVOS)
+ * ========================================================= */
+let agendamentoSelecionado = {
+    especialidade: '',
+    data: '',
+    hora: '',
+    profissional_id: '',
+    profissional_nome: ''
+};
+
+async function atualizarSlotsAutomaticos() {
     const especialidade = document.getElementById('sel-especialidade').value;
-    const selectProf = document.getElementById('sel-profissional');
-    
-    if (!especialidade) {
-        selectProf.innerHTML = '<option value="">-- Selecione uma especialidade primeiro --</option>';
-        limparHorarios();
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/profissionais`);
-        const profissionais = await response.json();
-
-        // Filtrar por especialidade
-        const filtrados = profissionais.filter(p => p.especialidade === especialidade);
-
-        selectProf.innerHTML = '<option value="">-- Selecione --</option>';
-        filtrados.forEach(p => {
-            const option = document.createElement('option');
-            option.value = p.id;
-            option.textContent = p.nome;
-            selectProf.appendChild(option);
-        });
-
-        limparHorarios();
-    } catch (error) {
-        console.error('Erro ao buscar profissionais:', error);
-    }
-}
-
-async function atualizarHorariosDisponíveis() {
-    const especialidade = document.getElementById('sel-especialidade').value;
-    const profissionalId = document.getElementById('sel-profissional').value;
     const dataStr = document.getElementById('data-agendamento').value;
-    const containerHorarios = document.getElementById('horarios-container');
+    const sectionHorarios = document.getElementById('section-horarios');
     const gridHorarios = document.getElementById('grid-horarios');
+    const areaConf = document.getElementById('area-confirmacao');
 
-    if (!especialidade || !profissionalId || !dataStr) {
-        containerHorarios.style.display = 'none';
-        limparResumo();
+    if (!especialidade || !dataStr) {
+        if (sectionHorarios) sectionHorarios.style.display = 'none';
         return;
     }
 
+    // Resetar botão de confirmação ao mudar filtros
+    if (areaConf) {
+        areaConf.style.opacity = "0.5";
+        areaConf.style.pointerEvents = "none";
+        const btnFinal = document.getElementById('btn-final-confirm');
+        if (btnFinal) btnFinal.disabled = true;
+        const resumoTxt = areaConf.querySelector('.resumo-texto');
+        if (resumoTxt) resumoTxt.innerHTML = "Selecione um horário para habilitar a confirmação.";
+    }
+
     try {
-        // Descobrir dia da semana da data
-        const data = new Date(dataStr + 'T00:00:00');
+        // 1. Descobrir dia da semana (Corrigindo timezone para não pular o dia)
+        const [ano, mes, dia] = dataStr.split('-');
+        const data = new Date(ano, mes - 1, dia); 
         const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
         const diaSemana = diasSemana[data.getDay()];
 
-        // Buscar disponibilidades
-        const response = await fetch(`${API_URL}/profissionais/horarios`);
-        const disponibilidades = await response.json();
+        // 2. Buscar horários de profissionais e agendamentos do dia para verificar ocupação
+        const [resHorarios, resOcupados] = await Promise.all([
+            fetch(`${API_URL}/profissionais/horarios`),
+            fetch(`${API_URL}/agendamentos/ocupacao?data=${dataStr}`)
+        ]);
+        
+        const disponibilidades = await resHorarios.json();
+        const agendamentosOcupados = await resOcupados.json();
 
-        // Filtrar disponibilidades para o profissional e dia específico
-        const disponivelDia = disponibilidades.find(
-            d => d.profissional_id === profissionalId && d.dia_semana === diaSemana
-        );
+        // 3. Filtrar disponibilidades por especialidade e dia
+        const slotsDisponiveis = disponibilidades.filter(d => {
+            const espProf = d.usuarios ? (Array.isArray(d.usuarios) ? d.usuarios[0].especialidade : d.usuarios.especialidade) : null;
+            return espProf === especialidade && d.dia_semana === diaSemana;
+        });
 
         gridHorarios.innerHTML = '';
-        containerHorarios.style.display = 'block';
+        sectionHorarios.style.display = 'block';
 
-        if (!disponivelDia || disponivelDia.horarios.length === 0) {
-            gridHorarios.innerHTML = '<div class="horario-nao-disponivel">Nenhum horário disponível para este profissional neste dia.</div>';
-            limparResumo();
+        if (slotsDisponiveis.length === 0) {
+            gridHorarios.innerHTML = '<div style="grid-column: 1/-1; color:#e74c3c; font-weight:600;">Infelizmente, não há horários cadastrados para esta especialidade neste dia.</div>';
             return;
         }
 
-        // Renderizar botões de horário
-        disponivelDia.horarios.forEach(horario => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'btn-horario';
-            btn.textContent = horario;
-            btn.onclick = () => selecionarHorario(especialidade, profissionalId, dataStr, horario, btn);
-            gridHorarios.appendChild(btn);
+        // 4. Renderizar apenas horários que tenham pelo menos UM profissional livre
+        const horariosComProfissionalLivre = [];
+
+        slotsDisponiveis.forEach(dispo => {
+            dispo.horarios.forEach(h => {
+                // Verificar se este profissional específico está ocupado neste horário/data
+                const estaOcupado = agendamentosOcupados.some(ag => 
+                    ag.profissional_id === dispo.profissional_id && 
+                    ag.hora === h && 
+                    ag.status !== 'Cancelado'
+                );
+
+                if (!estaOcupado) {
+                    horariosComProfissionalLivre.push({
+                        hora: h,
+                        profId: dispo.profissional_id,
+                        profNome: dispo.usuarios.nome
+                    });
+                }
+            });
+        });
+
+        if (horariosComProfissionalLivre.length === 0) {
+            gridHorarios.innerHTML = '<div style="grid-column: 1/-1; color:#e74c3c; font-weight:600;">Todos os horários para este dia já foram preenchidos.</div>';
+            return;
+        }
+
+        // Ordenar e remover duplicatas de horários (se dois profs estão livres no mesmo horário, mostra o horário uma vez)
+        const horariosUnicos = [];
+        const setHoras = new Set();
+
+        horariosComProfissionalLivre.sort((a,b) => a.hora.localeCompare(b.hora)).forEach(item => {
+            if (!setHoras.has(item.hora)) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-horario';
+                btn.innerText = item.hora;
+                btn.onclick = () => selecionarHorarioSimplificado(item.hora, item.profId, item.profNome);
+                gridHorarios.appendChild(btn);
+                setHoras.add(item.hora);
+            }
         });
 
     } catch (error) {
-        console.error('Erro ao buscar horários disponíveis:', error);
+        console.error('Erro ao buscar slots:', error);
     }
 }
 
-function selecionarHorario(especialidade, profissionalId, dataStr, horario, botao) {
-    // Remover seleção anterior
+function selecionarHorarioSimplificado(hora, profId, profNome) {
+    // UI Feedback
     document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selected'));
+    event.target.classList.add('selected');
+
+    // Salvar dados
+    agendamentoSelecionado = {
+        especialidade: document.getElementById('sel-especialidade').value,
+        data: document.getElementById('data-agendamento').value,
+        hora: hora,
+        profissional_id: profId,
+        profissional_nome: profNome
+    };
+
+    // Habilitar área de confirmação
+    const areaConf = document.getElementById('area-confirmacao');
+    const btnFinal = document.getElementById('btn-final-confirm');
     
-    // Selecionar novo horário
-    botao.classList.add('selected');
-
-    // Buscar nome do profissional
-    const selectProf = document.getElementById('sel-profissional');
-    const profNome = selectProf.options[selectProf.selectedIndex].text;
-
-    // Formatar data para exibição
-    const data = new Date(dataStr + 'T00:00:00');
-    const dataFormatada = data.toLocaleDateString('pt-BR');
-
-    // Atualizar resumo
-    const resumo = document.getElementById('resumo-agendamento');
-    const btnConfirmar = document.getElementById('btn-confirmar-agendamento');
-    
-    document.getElementById('resumo-especialidade').textContent = especialidade;
-    document.getElementById('resumo-profissional').textContent = profNome;
-    document.getElementById('resumo-data').textContent = dataFormatada;
-    document.getElementById('resumo-horario').textContent = horario;
-
-    resumo.classList.add('visible');
-    btnConfirmar.style.display = 'block';
-
-    // Armazenar dados no botão para confirmar depois
-    btnConfirmar.dataset.especialidade = especialidade;
-    btnConfirmar.dataset.profissionalId = profissionalId;
-    btnConfirmar.dataset.data = dataStr;
-    btnConfirmar.dataset.horario = horario;
+    if (areaConf && btnFinal) {
+        areaConf.style.opacity = "1";
+        areaConf.style.pointerEvents = "auto";
+        btnFinal.disabled = false;
+        
+        const dataFormatada = agendamentoSelecionado.data.split('-').reverse().join('/');
+        areaConf.querySelector('.resumo-texto').innerHTML = `
+            Você selecionou: <strong>${agendamentoSelecionado.especialidade}</strong><br>
+            Dia <strong>${dataFormatada}</strong> às <strong>${hora}</strong>.
+        `;
+    }
 }
 
-async function confirmarAgendamento() {
-    const btn = document.getElementById('btn-confirmar-agendamento');
-    const especialidade = btn.dataset.especialidade;
-    const profissionalId = btn.dataset.profissionalId;
-    const data = btn.dataset.data;
-    const horario = btn.dataset.horario;
-
-    if (!especialidade || !profissionalId || !data || !horario) {
-        alert('Por favor, selecione todos os campos antes de confirmar.');
+async function confirmarAgendamentoSimplificado() {
+    const usuarioId = localStorage.getItem('usuario_id');
+    
+    if (!usuarioId) {
+        alert("Sessão expirada. Faça login novamente.");
         return;
     }
+
+    const payload = {
+        usuario_id: usuarioId,
+        profissional_id: agendamentoSelecionado.profissional_id,
+        especialidade: agendamentoSelecionado.especialidade,
+        data: agendamentoSelecionado.data,
+        hora: agendamentoSelecionado.hora
+    };
 
     try {
         const response = await fetch(`${API_URL}/agendamentos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                usuario_id: localStorage.getItem('usuario_id'),
-                profissional_id: profissionalId,
-                especialidade: especialidade,
-                data: data,
-                hora: horario
-            })
+            body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-            alert("Agendamento realizado com sucesso!");
+            alert(`✅ Sucesso! Seu agendamento para ${agendamentoSelecionado.especialidade} foi solicitado.`);
             window.location.href = '/aluno/agendamentos';
         } else {
-            const erro = await response.json();
-            alert(erro.error || "Erro ao realizar agendamento.");
+            const err = await response.json();
+            alert("Erro ao agendar: " + err.error);
         }
     } catch (error) {
-        console.error('Erro ao confirmar agendamento:', error);
-        alert('Erro ao conectar com o servidor.');
+        console.error('Erro no agendamento:', error);
+        alert("Erro de conexão com o servidor.");
     }
 }
 

@@ -62,6 +62,23 @@ export const registrarUsuario = async (req, res) => {
 };
 
 // =====================================================
+// GET PROFISSIONAIS - Lista usuários do tipo profissional
+// =====================================================
+export const getProfissionais = async (req, res) => {
+    try {
+        const { data: profissionais, error } = await supabase
+            .from("usuarios")
+            .select("id, nome, especialidade, foto_url")
+            .eq("tipo_usuario", "profissional");
+
+        if (error) throw error;
+        return res.json(profissionais);
+    } catch (err) {
+        return res.status(500).json({ error: "Erro ao buscar profissionais." });
+    }
+};
+
+// =====================================================
 // LOGIN - Busca usuário no Supabase
 // =====================================================
 export const login = async (req, res) => {
@@ -486,6 +503,20 @@ export const criarAgendamento = async (req, res) => {
     }
 
     try {
+        // --- TRAVA DE SEGURANÇA: Verificar se já existe agendamento neste horário ---
+        const { data: existente, error: errCheck } = await supabase
+            .from("agendamentos")
+            .select("id")
+            .eq("profissional_id", profissional_id)
+            .eq("data", data)
+            .eq("hora", hora)
+            .neq("status", "Cancelado") // Ignorar os cancelados
+            .maybeSingle();
+
+        if (existente) {
+            return res.status(400).json({ error: "Este horário já foi preenchido por outro aluno. Por favor, escolha outro." });
+        }
+        // ---------------------------------------------------------------------------
         const { data: novoAgendamento, error } = await supabase
             .from("agendamentos")
             .insert([{
@@ -590,6 +621,28 @@ export const getAgendamentosProfissional = async (req, res) => {
         return res.json(agendamentos || []);
     } catch (err) {
         return res.status(500).json({ error: "Erro ao buscar agendamentos do profissional." });
+    }
+};
+
+// =====================================================
+// GET AGENDAMENTOS POR DATA - Verifica ocupação global
+// =====================================================
+export const getAgendamentosPorData = async (req, res) => {
+    const { data } = req.query;
+
+    if (!data) return res.status(400).json({ error: "Data é obrigatória." });
+
+    try {
+        const { data: agendamentos, error } = await supabase
+            .from("agendamentos")
+            .select("profissional_id, hora, status")
+            .eq("data", data)
+            .neq("status", "Cancelado");
+
+        if (error) throw error;
+        return res.json(agendamentos);
+    } catch (err) {
+        return res.status(500).json({ error: "Erro ao buscar ocupação." });
     }
 };
 

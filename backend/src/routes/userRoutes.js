@@ -5,8 +5,8 @@ import { upload } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
-router.use(logRequest);
-router.use(workingDaysOnly);
+// router.use(logRequest);
+// router.use(workingDaysOnly);
 
 router.post("/login", Controller.login);
 router.post("/cadastro", Controller.registrarUsuario);
@@ -17,7 +17,9 @@ router.get("/itens/:codigo", Controller.getItems);
 router.get("/logs", Controller.getLogs);
 router.get("/logs/:data", Controller.getLogsPorData);
 router.get("/relatorio", Controller.generatePDF);
+router.get("/profissionais", Controller.getProfissionais);
 router.get("/profissionais/horarios", Controller.getHorarios);
+router.get("/agendamentos/ocupacao", Controller.getAgendamentosPorData);
 router.get("/agendamentos/usuario/:usuario_id", Controller.getAgendamentosUsuario);
 router.get("/agendamentos/profissional/:profissional_id", Controller.getAgendamentosProfissional);
 router.post("/agendamentos", Controller.criarAgendamento);

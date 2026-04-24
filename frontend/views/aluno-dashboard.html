@@ -180,71 +180,18 @@
                 Carregando próximo agendamento...
             </div>
 
-            <!-- Novo Formulário de Agendamento -->
+            <!-- Seção de Ação Rápida -->
             <div class="page-header" style="margin-top: 40px; border-bottom:none; margin-bottom: 10px;">
-                <h2 class="page-title">Novo Agendamento</h2>
+                <h2 class="page-title">Ações Rápidas</h2>
             </div>
             <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:20px;">
 
-            <div class="info-importante">
-                ℹ️ Selecione a especialidade desejada, o profissional, a data (até 1 mês no futuro) e o horário disponível.
-            </div>
-
-            <div class="novo-agendamento-container">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="sel-especialidade">Especialidade/Serviço:</label>
-                        <select id="sel-especialidade" onchange="atualizarProfissionaisFiltrados()">
-                            <option value="">-- Selecione --</option>
-                            <option value="Geral">Clínico Geral</option>
-                            <option value="Dentista">Dentista</option>
-                            <option value="Psicólogo">Psicólogo</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="sel-profissional">Profissional:</label>
-                        <select id="sel-profissional" onchange="atualizarHorariosDisponíveis()">
-                            <option value="">-- Selecione uma especialidade primeiro --</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="data-agendamento">Data (máx. 30 dias):</label>
-                        <input type="date" id="data-agendamento" onchange="atualizarHorariosDisponíveis()">
-                    </div>
-                </div>
-
-                <!-- Horários disponíveis -->
-                <div class="horarios-container" id="horarios-container" style="display:none;">
-                    <div class="horarios-titulo">Horários disponíveis:</div>
-                    <div class="horarios-grid" id="grid-horarios">
-                        <div class="horario-nao-disponivel">Selecione especialidade, profissional e data</div>
-                    </div>
-                </div>
-
-                <!-- Resumo do agendamento -->
-                <div class="resumo-agendamento" id="resumo-agendamento">
-                    <div class="resumo-linha">
-                        <span>Especialidade:</span>
-                        <strong id="resumo-especialidade">-</strong>
-                    </div>
-                    <div class="resumo-linha">
-                        <span>Profissional:</span>
-                        <strong id="resumo-profissional">-</strong>
-                    </div>
-                    <div class="resumo-linha">
-                        <span>Data:</span>
-                        <strong id="resumo-data">-</strong>
-                    </div>
-                    <div class="resumo-linha">
-                        <span>Horário:</span>
-                        <strong id="resumo-horario">-</strong>
-                    </div>
-                </div>
-
-                <button id="btn-confirmar-agendamento" onclick="confirmarAgendamento()" class="btn-green btn-agendar" style="display:none; width:100%;">
-                    ✓ Confirmar Agendamento
+            <div class="card" style="text-align: center; padding: 40px; background: #f0fdf4; border: 2px dashed var(--green-primary);">
+                <div style="font-size: 3rem; margin-bottom: 15px;">📅</div>
+                <h3 style="color: var(--green-primary); margin-bottom: 10px;">Precisa de um atendimento?</h3>
+                <p style="color: #666; margin-bottom: 25px;">Agende sua consulta com nossos profissionais de forma rápida e simples.</p>
+                <button onclick="window.location.href='/aluno/novo-agendamento'" class="btn-green" style="padding: 15px 40px; font-size: 1.1rem; font-weight: bold; cursor: pointer;">
+                    ➕ SOLICITAR NOVA CONSULTA
                 </button>
             </div>
 

@@ -52,6 +52,7 @@ app.get("/cadastro", (req, res) => res.sendFile(path.join(views, "cadastro.html"
 
 // Rotas do Perfil ALUNO
 app.get("/aluno/dashboard", (req, res) => res.sendFile(path.join(views, "aluno-dashboard.html")));
+app.get("/aluno/novo-agendamento", (req, res) => res.sendFile(path.join(views, "aluno-novo-agendamento.html")));
 app.get("/aluno/agendamentos", (req, res) => res.sendFile(path.join(views, "aluno-agendamentos.html")));
 app.get("/aluno/informacoes", (req, res) => res.sendFile(path.join(views, "informacoes.html")));
 app.get("/aluno/mapa", (req, res) => res.sendFile(path.join(views, "mapa.html")));
