@@ -1059,13 +1059,15 @@ async function carregarLogs() {
     if (!tbody) return;
 
     try {
-        // Simulação ou busca real de logs
         const response = await fetch(`${API_URL}/logs`);
+        if (!response.ok) throw new Error('Falha ao carregar logs do servidor');
+        
         const logs = await response.json();
         originalLogs = logs;
         renderizarTabelaLogs(logs);
     } catch (error) {
         console.error('Erro ao carregar logs:', error);
+        alert('Erro ao carregar logs: ' + error.message);
     }
 }
 
@@ -1124,5 +1126,128 @@ function limparFiltros(tipo) {
     } else if (tipo === 'logs') {
         document.querySelectorAll('.filter-input').forEach(i => i.value = '');
         renderizarTabelaLogs(originalLogs);
+    }
+}
+
+/**
+ * Dashboard de Estatísticas Gerais (Gestão)
+ */
+async function carregarEstatisticas() {
+    // Proteção de rota no frontend
+    const tipo = localStorage.getItem('tipo_usuario');
+    if (tipo !== 'profissional') {
+        alert('Acesso restrito a gestores.');
+        window.location.href = '/aluno/dashboard';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/estatisticas`);
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || 'Erro desconhecido');
+
+        // 1. Atualizar Cards de Texto
+        if (document.getElementById('stat-agendamentos')) document.getElementById('stat-agendamentos').innerText = data.agendamentos.total;
+        if (document.getElementById('stat-atendidos')) document.getElementById('stat-atendidos').innerText = data.agendamentos.porStatus.Atendido;
+        if (document.getElementById('stat-alunos')) document.getElementById('stat-alunos').innerText = data.usuarios.alunos;
+        if (document.getElementById('stat-gastos')) document.getElementById('stat-gastos').innerText = `R$ ${data.financeiro.gastoEstimado.toLocaleString('pt-BR')}`;
+        if (document.getElementById('stat-itens')) document.getElementById('stat-itens').innerText = data.inventario.total;
+        if (document.getElementById('stat-critico')) document.getElementById('stat-critico').innerText = data.inventario.estoqueBaixo;
+
+        // 2. Gráfico de Status (Doughnut)
+        const canvasStatus = document.getElementById('chartStatus');
+        if (canvasStatus) {
+            new Chart(canvasStatus.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pendente', 'Confirmado', 'Cancelado', 'Atendido'],
+                    datasets: [{
+                        data: [
+                            data.agendamentos.porStatus.Pendente,
+                            data.agendamentos.porStatus.Confirmado,
+                            data.agendamentos.porStatus.Cancelado,
+                            data.agendamentos.porStatus.Atendido
+                        ],
+                        backgroundColor: ['#f1c40f', '#3498db', '#e74c3c', '#2ecc71'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        // 3. Gráfico de Tendência Mensal (Line)
+        const canvasTendencia = document.getElementById('chartTendencia');
+        if (canvasTendencia && data.agendamentos.tendencia) {
+            const labels = Object.keys(data.agendamentos.tendencia).sort();
+            const values = labels.map(l => data.agendamentos.tendencia[l]);
+            new Chart(canvasTendencia.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Agendamentos',
+                        data: values,
+                        borderColor: '#1e6d38',
+                        backgroundColor: 'rgba(30, 109, 56, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        }
+
+        // 4. Gráfico de Especialidades (Horizontal Bar)
+        const canvasEsp = document.getElementById('chartEspecialidades');
+        if (canvasEsp && data.agendamentos.porEspecialidade) {
+            const labels = Object.keys(data.agendamentos.porEspecialidade);
+            const values = labels.map(l => data.agendamentos.porEspecialidade[l]);
+            new Chart(canvasEsp.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Demandas',
+                        data: values,
+                        backgroundColor: ['#3498db', '#9b59b6', '#e67e22', '#2ecc71', '#e74c3c'],
+                        borderRadius: 5
+                    }]
+                },
+                options: { 
+                    indexAxis: 'y',
+                    responsive: true, 
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        // 5. Gráfico de Usuários (Bar)
+        const canvasUsers = document.getElementById('chartUsuarios');
+        if (canvasUsers) {
+            new Chart(canvasUsers.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Alunos', 'Profissionais'],
+                    datasets: [{
+                        label: 'Total',
+                        data: [data.usuarios.alunos, data.usuarios.profissionais],
+                        backgroundColor: ['#9b59b6', '#34495e'],
+                        borderRadius: 5
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+        alert('Erro ao carregar estatísticas: ' + error.message);
     }
 }

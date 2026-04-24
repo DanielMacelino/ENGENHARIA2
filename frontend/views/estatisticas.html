@@ -62,17 +62,28 @@
                     <canvas id="chartStatus"></canvas>
                 </div>
                 <div class="card">
+                    <h3 style="margin-bottom: 20px;">Tendência Mensal (Volume)</h3>
+                    <canvas id="chartTendencia"></canvas>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px;">
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">Demanda por Especialidade</h3>
+                    <canvas id="chartEspecialidades"></canvas>
+                </div>
+                <div class="card">
                     <h3 style="margin-bottom: 20px;">Distribuição de Usuários</h3>
                     <canvas id="chartUsuarios"></canvas>
                 </div>
             </div>
 
-            <div class="card" style="margin-top: 30px;">
+            <div class="card" style="margin-top: 30px; margin-bottom: 30px;">
                 <h3 style="margin-bottom: 20px;">Gestão de Inventário</h3>
                 <div style="display: flex; align-items: center; justify-content: space-around; padding: 20px;">
                     <div style="text-align: center;">
                         <span style="display: block; font-size: 0.9rem; color: #666;">Itens em Estoque</span>
-                        <strong id="stat-itens" style="font-size: 2rem; color: var(--green-primary);">...</strong>
+                        <strong id="stat-itens" style="font-size: 2rem; color: #1e6d38;">...</strong>
                     </div>
                     <div style="text-align: center; background: #fff5f5; padding: 15px; border-radius: 10px; border: 1px solid #feb2b2;">
                         <span style="display: block; font-size: 0.9rem; color: #c53030;">Estoque Crítico (< 5)</span>

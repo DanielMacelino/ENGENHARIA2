@@ -200,6 +200,24 @@ export const getItems = async (req, res) => {
 };
 
 // =====================================================
+// GET LOGS - Lista todos os logs (audit)
+// =====================================================
+export const getLogs = async (req, res) => {
+    try {
+        const { data: logs, error } = await supabase
+            .from("logs")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(100);
+
+        if (error) throw error;
+        return res.json(logs || []);
+    } catch (err) {
+        return res.status(500).json({ error: "Erro ao buscar logs." });
+    }
+};
+
+// =====================================================
 // GET LOGS POR DATA - Busca logs de uma data específica
 // =====================================================
 export const getLogsPorData = async (req, res) => {
@@ -778,15 +796,17 @@ export const calcularDistancia = (req, res) => {
 // =====================================================
 export const getEstatisticasGerais = async (req, res) => {
     try {
+        console.log("[STATS] Iniciando coleta de dados profunda...");
+        
         // 1. Total de Usuários por Tipo
-        const { data: users, error: errUsers } = await supabase.from("usuarios").select("tipo_usuario");
+        const { data: users, error: errUsers } = await supabase.from("usuarios").select("tipo_usuario, especialidade");
         if (errUsers) throw errUsers;
 
         const totalAlunos = users.filter(u => u.tipo_usuario === 'aluno').length;
         const totalProfs = users.filter(u => u.tipo_usuario === 'profissional').length;
 
-        // 2. Agendamentos por Status
-        const { data: agendamentos, error: errAgend } = await supabase.from("agendamentos").select("status, data");
+        // 2. Agendamentos
+        const { data: agendamentos, error: errAgend } = await supabase.from("agendamentos").select("status, data, especialidade");
         if (errAgend) throw errAgend;
 
         const statsStatus = {
@@ -796,24 +816,43 @@ export const getEstatisticasGerais = async (req, res) => {
             Atendido: agendamentos.filter(a => a.status === 'Atendido').length
         };
 
+        // Distribuição por Especialidade (Demanda)
+        const especialidades = {};
+        agendamentos.forEach(a => {
+            especialidades[a.especialidade] = (especialidades[a.especialidade] || 0) + 1;
+        });
+
+        // Tendência Mensal (Agrupado por Mês)
+        const tendenciaMensal = {};
+        agendamentos.forEach(a => {
+            const mes = a.data.substring(0, 7); // YYYY-MM
+            tendenciaMensal[mes] = (tendenciaMensal[mes] || 0) + 1;
+        });
+
         // 3. Inventário
         const { data: itens, error: errItens } = await supabase.from("itens").select("quantidade, nome");
         if (errItens) throw errItens;
 
         const totalItens = itens.length;
         const estoqueBaixo = itens.filter(i => i.quantidade < 5).length;
+        const valorEstoque = itens.reduce((acc, i) => acc + (i.quantidade * 15), 0); // Valor padrão de R$ 15 por item
         
-        // Simulação de "Gastos" (R$ 50 por consulta atendida + R$ 10 por item no estoque)
+        // Gasto Estimado consolidado
         const gastoEstimado = (statsStatus.Atendido * 50) + (itens.reduce((acc, i) => acc + i.quantidade, 0) * 10);
 
         return res.json({
             usuarios: { total: users.length, alunos: totalAlunos, profissionais: totalProfs },
-            agendamentos: { total: agendamentos.length, porStatus: statsStatus },
-            inventario: { total: totalItens, estoqueBaixo },
+            agendamentos: { 
+                total: agendamentos.length, 
+                porStatus: statsStatus,
+                porEspecialidade: especialidades,
+                tendencia: tendenciaMensal
+            },
+            inventario: { total: totalItens, estoqueBaixo, valorTotal: valorEstoque },
             financeiro: { gastoEstimado }
         });
     } catch (err) {
-        console.error("Erro ao buscar estatísticas:", err);
-        return res.status(500).json({ error: "Erro ao carregar estatísticas." });
+        console.error("Erro fatal ao buscar estatísticas:", err);
+        return res.status(500).json({ error: "Erro ao carregar estatísticas.", details: err.message });
     }
 };

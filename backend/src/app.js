@@ -17,7 +17,12 @@ const uploads = path.resolve(root, "backend/uploads");
 
 const app = express();
 
-app.use(cors());
+// Configuração de CORS Restrito (Permitir apenas o próprio servidor)
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

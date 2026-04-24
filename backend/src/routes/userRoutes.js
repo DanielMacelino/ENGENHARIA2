@@ -14,6 +14,7 @@ router.get("/itens", Controller.getItens);
 router.post("/itens", Controller.criarItem);
 router.delete("/itens/:id", Controller.deleteItem);
 router.get("/itens/:codigo", Controller.getItems);
+router.get("/logs", Controller.getLogs);
 router.get("/logs/:data", Controller.getLogsPorData);
 router.get("/relatorio", Controller.generatePDF);
 router.get("/profissionais/horarios", Controller.getHorarios);
