@@ -44,9 +44,15 @@ function renderSidebar() {
     const path = window.location.pathname;
     const nomeUser = localStorage.getItem('usuario_nome') || 'Usuário';
     const especialidade = localStorage.getItem('usuario_especialidade') || 'Geral';
+    const fotoUrl = localStorage.getItem('usuario_foto') || 'https://ui-avatars.com/api/?name=' + nomeUser + '&background=aae0a4&color=1e6d38';
 
     let menuHTML = `
         <div class="sidebar-profile">
+            <div class="profile-img-container" onclick="document.getElementById('input-foto-perfil').click()">
+                <img src="${fotoUrl}" alt="Perfil" id="sidebar-foto-perfil">
+                <div class="profile-img-overlay"><span>&#x1f4f7;</span></div>
+                <input type="file" id="input-foto-perfil" style="display: none;" accept="image/*" onchange="uploadProfilePhoto(this)">
+            </div>
             <p>Olá, <strong>${nomeUser}</strong>.</p>
             <strong>${tipo === 'aluno' ? 'IFCE | Campus - Crato' : `Especialidade: ${especialidade}`}</strong>
         </div>
@@ -73,6 +79,38 @@ function renderSidebar() {
 
     menuHTML += `</ul>`;
     container.innerHTML = menuHTML;
+}
+
+/**
+ * Faz o upload da foto de perfil para o Supabase Storage via backend
+ */
+async function uploadProfilePhoto(input) {
+    if (!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append('imagem', file);
+    formData.append('usuario_id', localStorage.getItem('usuario_id'));
+
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem('usuario_foto', data.url);
+            document.getElementById('sidebar-foto-perfil').src = data.url;
+            alert('Foto de perfil atualizada com sucesso!');
+        } else {
+            alert('Erro ao atualizar foto: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Erro no upload:', error);
+        alert('Erro ao conectar com o servidor.');
+    }
 }
 
 function verificarSessao() {

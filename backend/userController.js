@@ -688,20 +688,51 @@ export const verificar2FA = (req, res) => {
 };
 
 // =====================================================
-// UPLOAD IMAGEM - Salva imagem localmente (preparo para nuvem)
+// UPLOAD IMAGEM - Salva imagem no Supabase Storage
 // =====================================================
-export const uploadImagem = (req, res) => {
+export const uploadImagem = async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: "Nenhum arquivo enviado." });
     }
 
-    // A URL seria retornada pelo Supabase Storage. Aqui usamos o caminho local.
-    const fileUrl = `/uploads/${req.file.filename}`;
-    
-    return res.status(201).json({
-        message: "Imagem salva com sucesso.",
-        url: fileUrl
-    });
+    try {
+        const { usuario_id } = req.body;
+        const fileName = `${Date.now()}-${req.file.originalname.replace(/\s/g, '_')}`;
+        
+        // 1. Upload para o Supabase Storage (Bucket: 'imagens')
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('imagens')
+            .upload(fileName, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: true
+            });
+
+        if (uploadError) throw uploadError;
+
+        // 2. Gerar a URL pública do arquivo
+        const { data: { publicUrl } } = supabase.storage
+            .from('imagens')
+            .getPublicUrl(fileName);
+
+        // 3. Opcional: Atualizar a foto no perfil do usuário se o ID for enviado
+        if (usuario_id) {
+            const { error: updateError } = await supabase
+                .from('usuarios')
+                .update({ foto_url: publicUrl })
+                .eq('id', usuario_id);
+            
+            if (updateError) console.error("Erro ao vincular foto ao usuário:", updateError);
+        }
+
+        return res.status(201).json({
+            message: "Imagem salva na nuvem com sucesso.",
+            url: publicUrl
+        });
+
+    } catch (err) {
+        console.error("Erro no upload para Supabase:", err);
+        return res.status(500).json({ error: "Erro ao salvar imagem na nuvem.", details: err.message });
+    }
 };
 
 // =====================================================
