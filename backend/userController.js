@@ -8,11 +8,22 @@ const JWT_SECRET = "ifce_posto_saude_secret";
 const mfaCodes = new Map(); // Store 2FA codes in memory
 
 // Função para criptografar senha (Requisito F)
-const hashPassword = (password) => {
+export const hashPassword = (password) => {
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
     return `${salt}:${hash}`;
 };
+
+// Configuração do Transportador de E-mail (Requisito H - Real)
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: false, // true para 465, false para outras portas
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    },
+});
 
 // Função para verificar senha (Requisito F)
 const verifyPassword = (password, storedPassword) => {
@@ -108,15 +119,36 @@ export const login = async (req, res) => {
         const codigo2FA = Math.floor(100000 + Math.random() * 900000).toString();
         mfaCodes.set(usuario.email, { codigo: codigo2FA, usuario });
         
-        console.log(`[2FA MOCK] Código gerado para ${usuario.email}: ${codigo2FA}`);
+        console.log(`[2FA] Código gerado para ${usuario.email}: ${codigo2FA}`);
 
-        // Tentativa de envio real (Mock com console para e-mails fictícios)
-        try {
-            // Em produção, usar transporter real do nodemailer
-            // const transporter = nodemailer.createTransport({ ... });
-            // await transporter.sendMail({ to: usuario.email, subject: "Código de Login", text: `Seu código: ${codigo2FA}` });
-        } catch (e) {
-            console.error("Erro ao enviar email, mas o código está no log para testes.", e);
+        // Envio condicional de 2FA (Requisito H)
+        if (usuario.email === 'dev.danielmarcelino@gmail.com') {
+            // Envio Real via E-mail para Daniel
+            try {
+                await transporter.sendMail({
+                    from: `"Agenda IFCE" <${process.env.SMTP_USER}>`,
+                    to: usuario.email,
+                    subject: "Seu Código de Segurança - Agenda IFCE",
+                    html: `
+                        <div style="font-family: sans-serif; max-width: 500px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                            <h2 style="color: #1e6d38;">Olá, ${usuario.nome}!</h2>
+                            <p>Você solicitou acesso ao sistema. Use o código abaixo para completar seu login:</p>
+                            <div style="background: #f4f4f4; padding: 20px; text-align: center; font-size: 2rem; font-weight: bold; letter-spacing: 5px; color: #1e6d38; border-radius: 8px;">
+                                ${codigo2FA}
+                            </div>
+                            <p style="font-size: 0.8rem; color: #666; margin-top: 20px;">
+                                Este código expira em breve. Se você não solicitou este acesso, ignore este e-mail.
+                            </p>
+                        </div>
+                    `
+                });
+                console.log(`[SMTP] E-mail enviado com sucesso para ${usuario.email}`);
+            } catch (e) {
+                console.error("Falha ao enviar e-mail real (verifique as credenciais no .env):", e.message);
+            }
+        } else {
+            // Outros usuários: Apenas Terminal (Simulação)
+            console.log(`[MOCK 2FA] Código para acesso: ${codigo2FA} (Apenas terminal para este usuário)`);
         }
 
         return res.json({ requires_2fa: true, email: usuario.email, message: "Código de 2FA enviado para o seu e-mail." });
