@@ -11,6 +11,9 @@ let originalItens = [];
 let originalLogs = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Transição de entrada da página
+    document.body.classList.add('loaded');
+
     // Garantir que o toast.css está carregado
     if (!document.querySelector('link[href*="toast.css"]')) {
         const link = document.createElement('link');
@@ -87,6 +90,15 @@ function renderSidebar() {
     }
 
     menuHTML += `</ul>`;
+    
+    // Rodapé do Menu Lateral
+    menuHTML += `
+        <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid #333; margin-top: auto; font-size: 0.75rem; color: #666;">
+            <p>&copy; 2026 IFCE Crato</p>
+            <p>Posto de Saúde Digital</p>
+        </div>
+    `;
+    
     container.innerHTML = menuHTML;
 }
 
@@ -230,51 +242,25 @@ async function fazerLogin(event) {
 
         if (response.ok) {
             if (data.requires_2fa) {
-                const codigo = prompt(`${data.message}\n\nDigite o código de 6 dígitos recebido:`);
-                if (!codigo) {
-                    showToast('Login cancelado. Código não informado.');
-                    if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
-                    return;
-                }
-                const verifyResp = await fetch(`${API_URL}/login/verify`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: data.email, codigo })
-                });
-                const verifyData = await verifyResp.json();
-                if (verifyResp.ok) {
-                    localStorage.setItem('token', verifyData.token);
-                    localStorage.setItem('usuario_id', verifyData.id);
-                    localStorage.setItem('tipo_usuario', verifyData.tipo_usuario);
-                    localStorage.setItem('usuario_nome', verifyData.nome);
-                    localStorage.setItem('usuario_foto', verifyData.foto_url || '');
-                    localStorage.setItem('usuario_especialidade', verifyData.especialidade || '');
-
-                    if (verifyData.tipo_usuario === 'aluno') {
-                        window.location.href = '/aluno/dashboard';
-                    } else {
-                        window.location.href = '/profissional/dashboard';
-                    }
-                } else {
-                    showToast(verifyData.error || 'Código 2FA inválido.');
-                    if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
-                }
+                // Transição para Etapa 2 (2FA)
+                localStorage.setItem('temp_login_email', data.email);
+                document.getElementById('login-step-1').style.display = 'none';
+                document.getElementById('login-step-2').style.display = 'block';
+                
+                // Inicializa os inputs de código
+                inicializarInputsCodigo();
+                
+                // Configura o botão de verificação
+                const btnVerify = document.getElementById('btn-verify-2fa');
+                btnVerify.onclick = () => verificarCodigo2FA(data.email);
+                
+                showToast(data.message);
             } else {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('usuario_id', data.id);
-                localStorage.setItem('tipo_usuario', data.tipo_usuario);
-                localStorage.setItem('usuario_nome', data.nome);
-                localStorage.setItem('usuario_foto', data.foto_url || '');
-                localStorage.setItem('usuario_especialidade', data.especialidade || '');
-
-                if (data.tipo_usuario === 'aluno') {
-                    window.location.href = '/aluno/dashboard';
-                } else {
-                    window.location.href = '/profissional/dashboard';
-                }
+                salvarSessaoERecirecionar(data);
             }
         } else {
-            showToast(data.error || 'Credenciais inválidas.');
+            shakeElement('.login-card');
+            showToast(data.error || 'Credenciais inválidas.', 'error');
             if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
         }
     } catch (error) {
@@ -282,6 +268,87 @@ async function fazerLogin(event) {
         showToast('Erro ao conectar com o servidor.');
         if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
     }
+}
+
+function inicializarInputsCodigo() {
+    const inputs = document.querySelectorAll('.code-input');
+    inputs.forEach((input, index) => {
+        input.value = '';
+        input.addEventListener('keyup', (e) => {
+            if (e.key >= 0 && e.key <= 9) {
+                if (index < inputs.length - 1) inputs[index + 1].focus();
+            } else if (e.key === 'Backspace') {
+                if (index > 0) inputs[index - 1].focus();
+            }
+        });
+        
+        // Auto focus no primeiro
+        if (index === 0) setTimeout(() => input.focus(), 100);
+    });
+}
+
+async function verificarCodigo2FA(email) {
+    const inputs = document.querySelectorAll('.code-input');
+    const codigo = Array.from(inputs).map(i => i.value).join('');
+    const btn = document.getElementById('btn-verify-2fa');
+
+    if (codigo.length < 6) {
+        return showToast('Por favor, insira o código de 6 dígitos.');
+    }
+
+    btn.innerText = "Verificando...";
+    btn.disabled = true;
+
+    try {
+        const verifyResp = await fetch(`${API_URL}/login/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, codigo })
+        });
+        const verifyData = await verifyResp.json();
+
+        if (verifyResp.ok) {
+            salvarSessaoERecirecionar(verifyData);
+        } else {
+            shakeElement('.login-card');
+            showToast(verifyData.error || 'Código 2FA inválido.', 'error');
+            btn.innerText = "Verificar Código";
+            btn.disabled = false;
+        }
+    } catch (error) {
+        showToast('Erro na verificação.');
+        btn.innerText = "Verificar Código";
+        btn.disabled = false;
+    }
+}
+
+function salvarSessaoERecirecionar(data) {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('usuario_id', data.id);
+    localStorage.setItem('tipo_usuario', data.tipo_usuario);
+    localStorage.setItem('usuario_nome', data.nome);
+    localStorage.setItem('usuario_foto', data.foto_url || '');
+    localStorage.setItem('usuario_especialidade', data.especialidade || '');
+
+    window.location.href = data.tipo_usuario === 'aluno' ? '/aluno/dashboard' : '/profissional/dashboard';
+}
+
+function voltarParaLogin() {
+    document.getElementById('login-step-2').style.display = 'none';
+    document.getElementById('login-step-1').style.display = 'block';
+    const btn = document.getElementById('btn-entrar');
+    if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
+}
+
+/**
+ * Adiciona efeito de vibração (shake) a um elemento
+ */
+function shakeElement(selector) {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    el.classList.remove('shake');
+    void el.offsetWidth; // Trigger reflow
+    el.classList.add('shake');
 }
 
 /**
@@ -1168,6 +1235,15 @@ function limparFiltros(tipo) {
  * Dashboard de Estatísticas Gerais (Gestão)
  */
 async function carregarEstatisticas() {
+    // Configurações Globais do Chart.js para visual Premium
+    if (window.Chart) {
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = "#666";
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        Chart.defaults.plugins.tooltip.padding = 12;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+    }
+
     // Proteção de rota no frontend
     const tipo = localStorage.getItem('tipo_usuario');
     if (tipo !== 'profissional') {
@@ -1205,10 +1281,18 @@ async function carregarEstatisticas() {
                             data.agendamentos.porStatus.Atendido
                         ],
                         backgroundColor: ['#f1c40f', '#3498db', '#e74c3c', '#2ecc71'],
+                        hoverOffset: 15,
                         borderWidth: 0
                     }]
                 },
-                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                options: { 
+                    responsive: true, 
+                    cutout: '70%',
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } 
+                    },
+                    animation: { animateScale: true, animateRotate: true }
+                }
             });
         }
 
@@ -1388,4 +1472,46 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         if (toast.parentNode) toast.remove();
     }, 3000);
+}
+
+/**
+ * Calcula a distância entre dois pontos selecionados na página de mapa (Requisito I)
+ */
+async function calcularDistanciaFrontend() {
+    const coordA = document.getElementById('coord-a').value;
+    const coordB = document.getElementById('coord-b').value;
+    const resBox = document.getElementById('resultado-distancia');
+    const resVal = document.getElementById('valor-distancia');
+
+    if (!coordA || !coordB) {
+        showToast("Selecione os dois pontos para calcular.", "warning");
+        return;
+    }
+
+    const [lat1, lon1] = coordA.split(',').map(Number);
+    const [lat2, lon2] = coordB.split(',').map(Number);
+
+    try {
+        const response = await fetch('/api/distancia', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat1, lon1, lat2, lon2 })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            resVal.innerText = data.distancia_km;
+            resBox.style.display = 'block';
+            
+            // Efeito visual de destaque
+            resBox.classList.add('fade-in');
+            showToast(`Distância calculada: ${data.distancia_km} km`);
+        } else {
+            showToast("Erro ao calcular distância: " + data.error, "error");
+        }
+    } catch (error) {
+        console.error("Erro ao calcular distância:", error);
+        showToast("Erro de conexão com o servidor.", "error");
+    }
 }

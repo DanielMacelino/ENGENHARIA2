@@ -5,8 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Agenda IFCE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="/config.js"></script>
     <link rel="stylesheet" href="/public/style.css">
+    <link rel="icon" href="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/imagesifceredondo.JPG" type="image/x-icon">
 </head>
 
 <body>
@@ -47,28 +51,55 @@
 
             <!-- Formulário que chamará a API: POST /login -->
             <form id="form-login" class="login-form">
-                <div id="login-step-1">
+                <!-- ETAPA 1: CREDENCIAIS -->
+                <div id="login-step-1" class="fade-in">
                     <div>
-                        <input type="email" id="email" placeholder="Email (use aluno@ifce.br ou outro)" required>
+                        <input type="email" id="email" placeholder="Email" required>
                     </div>
                     <div>
                         <input type="password" id="senha" placeholder="Senha" required>
                     </div>
+                    
+                    <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem; justify-content:flex-start; margin-top:5px; margin-bottom:10px;">
+                        <input type="checkbox" id="lembrar" style="width:auto;">
+                        <label for="lembrar">Lembre-me</label>
+                    </div>
+
+                    <button type="submit" class="btn-green" id="btn-entrar"
+                        style="border-radius:20px; width: 100%; justify-content:center;">Entrar</button>
+                    
+                    <div style="margin-top:20px; font-size:0.85rem; color:#666;">
+                        Esqueceu a senha? <a href="#" onclick="solicitarRecuperacao()" style="color:blue; text-decoration:none;">Redefinir via SMS.</a>
+                    </div>
                 </div>
 
-                <div
-                    style="display:flex; align-items:center; gap:8px; font-size:0.9rem; justify-content:flex-start; margin-top:5px; margin-bottom:10px;">
-                    <input type="checkbox" id="lembrar" style="width:auto;">
-                    <label for="lembrar">Lembre-me</label>
-                </div>
+                <!-- ETAPA 2: VERIFICAÇÃO 2FA -->
+                <div id="login-step-2" class="fade-in" style="display:none;">
+                    <h3 style="color:var(--green-primary); margin-bottom:10px;">Verificação de Segurança</h3>
+                    <p style="font-size:0.85rem; color:#666; margin-bottom:20px;">
+                        Insira o código de 6 dígitos enviado para o seu e-mail.
+                    </p>
+                    
+                    <div class="verification-code-container">
+                        <input type="text" maxlength="1" class="code-input" data-index="0">
+                        <input type="text" maxlength="1" class="code-input" data-index="1">
+                        <input type="text" maxlength="1" class="code-input" data-index="2">
+                        <input type="text" maxlength="1" class="code-input" data-index="3">
+                        <input type="text" maxlength="1" class="code-input" data-index="4">
+                        <input type="text" maxlength="1" class="code-input" data-index="5">
+                    </div>
 
-                <button type="submit" class="btn-green" id="btn-entrar"
-                    style="border-radius:20px; width: 100%; justify-content:center;">Entrar</button>
+                    <button type="button" class="btn-green" id="btn-verify-2fa"
+                        style="border-radius:20px; width: 100%; justify-content:center; margin-top:20px;">Verificar Código</button>
+                    
+                    <div style="margin-top:20px; font-size:0.85rem; color:#666;">
+                        Não recebeu? <a href="#" onclick="fazerLogin()" style="color:var(--green-primary); text-decoration:none; font-weight:bold;">Reenviar código</a>
+                    </div>
+                    <div style="margin-top:10px; font-size:0.85rem;">
+                        <a href="#" onclick="voltarParaLogin()" style="color:#999; text-decoration:none;">Voltar para o login</a>
+                    </div>
+                </div>
             </form>
-
-            <div style="margin-top:20px; font-size:0.85rem; color:#666;">
-                Esqueceu a senha? <a href="#" onclick="solicitarRecuperacao()" style="color:blue; text-decoration:none;">Redefinir via SMS.</a>
-            </div>
         </div>
     </div>
 
