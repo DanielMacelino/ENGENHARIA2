@@ -1,53 +1,17 @@
-/**
- * script.js - Sistema de Agendamento - Posto de Saúde IFCE Crato
- * Refatorado: Centralização de Sidebar e Proteção de Rotas Profissional
- */
+/* dashboard.js */
+import { API_URL, showToast, getDistanciaHaversine } from './utils.js';
+import { verificarSessao, sairDoSistema } from './auth.js';
+import { initRealtime } from './realtime.js';
 
-const API_URL = '/api';
-
-// Variáveis globais para armazenar dados originais para filtragem local
 let originalAgendamentos = [];
 let originalItens = [];
 let originalLogs = [];
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Transição de entrada da página
-    document.body.classList.add('loaded');
-
-    // Garantir que o toast.css está carregado
-    if (!document.querySelector('link[href*="toast.css"]')) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/public/toast.css';
-        document.head.appendChild(link);
-    }
-
-    const formLogin = document.getElementById('form-login');
-    if (formLogin) {
-        formLogin.addEventListener('submit', fazerLogin);
-        return; 
-    }
-
-    // Se não for página de login, verifica sessão e renderiza sidebar
-    if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
-        verificarSessao();
-        renderSidebar(); 
-    }
-
-    // Delegação de eventos para botões de saída (globais)
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('btn-header-sair') || e.target.closest('.btn-header-sair')) {
-            e.preventDefault();
-            sairDoSistema();
-        }
-    });
-});
 
 /**
  * Renderiza o Menu Lateral dinamicamente conforme o tipo de usuário
  * Este é o ponto único de manutenção do menu (Escalonável)
  */
-function renderSidebar() {
+export function renderSidebar() {
     const container = document.getElementById('sidebar-container');
     if (!container) return;
 
@@ -73,19 +37,19 @@ function renderSidebar() {
 
     if (tipo === 'aluno') {
         menuHTML += `
-            <li><a href="/aluno/dashboard" class="${path === '/aluno/dashboard' ? 'active' : ''}"><span style="color:gray">&#x1f3e0;</span> Home / Início</a></li>
-            <li><a href="/aluno/novo-agendamento" class="${path === '/aluno/novo-agendamento' ? 'active' : ''}"><span style="color:var(--green-primary);">&#x2795;</span> Agendar Consulta</a></li>
-            <li><a href="/aluno/agendamentos" class="${path === '/aluno/agendamentos' ? 'active' : ''}"><span style="color:gray;">&#x1f4c5;</span> Meus Agendamentos</a></li>
-            <li><a href="/aluno/mapa" class="${path === '/aluno/mapa' ? 'active' : ''}"><span style="color:gray;">&#x1f4cd;</span> Mapa e Distância</a></li>
-            <li><a href="/aluno/informacoes" class="${path === '/aluno/informacoes' ? 'active' : ''}"><span style="color:gray;">&#x1f4da;</span> Informações Acadêmicas</a></li>
+            <li><a href="/aluno/dashboard" class="${path === '/aluno/dashboard' ? 'active' : ''}"><i data-lucide="home" style="width:18px;height:18px;"></i> Home / Início</a></li>
+            <li><a href="/aluno/novo-agendamento" class="${path === '/aluno/novo-agendamento' ? 'active' : ''}"><i data-lucide="plus-circle" style="width:18px;height:18px;color:var(--green-primary);"></i> Agendar Consulta</a></li>
+            <li><a href="/aluno/agendamentos" class="${path === '/aluno/agendamentos' ? 'active' : ''}"><i data-lucide="calendar" style="width:18px;height:18px;"></i> Meus Agendamentos</a></li>
+            <li><a href="/aluno/mapa" class="${path === '/aluno/mapa' ? 'active' : ''}"><i data-lucide="map-pin" style="width:18px;height:18px;"></i> Mapa e Distância</a></li>
+            <li><a href="/aluno/informacoes" class="${path === '/aluno/informacoes' ? 'active' : ''}"><i data-lucide="book" style="width:18px;height:18px;"></i> Informações Acadêmicas</a></li>
         `;
     } else {
         menuHTML += `
-            <li><a href="/profissional/dashboard" class="${path === '/profissional/dashboard' ? 'active' : ''}"><span style="color:gray">&#x1f3e0;</span> Home (Agenda)</a></li>
-            <li><a href="/profissional/disponibilidade" class="${path === '/profissional/disponibilidade' ? 'active' : ''}"><span style="color:gray;">&#x1f4c6;</span> Configurar Horários</a></li>
-            <li><a href="/profissional/itens" class="${path === '/profissional/itens' || path === '/profissional/criar-item' ? 'active' : ''}"><span style="color:gray;">&#x1f4e6;</span> Inventário</a></li>
-            <li><a href="/profissional/estatisticas" class="${path === '/profissional/estatisticas' ? 'active' : ''}"><span style="color:gray;">&#x1f4ca;</span> Estatísticas Gerais</a></li>
-            <li><a href="/profissional/logs" class="${path === '/profissional/logs' ? 'active' : ''}"><span style="color:gray;">&#x1f4dc;</span> Logs do Sistema</a></li>
+            <li><a href="/profissional/dashboard" class="${path === '/profissional/dashboard' ? 'active' : ''}"><i data-lucide="home" style="width:18px;height:18px;"></i> Home (Agenda)</a></li>
+            <li><a href="/profissional/disponibilidade" class="${path === '/profissional/disponibilidade' ? 'active' : ''}"><i data-lucide="calendar-clock" style="width:18px;height:18px;"></i> Configurar Horários</a></li>
+            <li><a href="/profissional/itens" class="${path === '/profissional/itens' || path === '/profissional/criar-item' ? 'active' : ''}"><i data-lucide="package" style="width:18px;height:18px;"></i> Inventário</a></li>
+            <li><a href="/profissional/estatisticas" class="${path === '/profissional/estatisticas' ? 'active' : ''}"><i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i> Estatísticas Gerais</a></li>
+            <li><a href="/profissional/logs" class="${path === '/profissional/logs' ? 'active' : ''}"><i data-lucide="file-text" style="width:18px;height:18px;"></i> Logs do Sistema</a></li>
         `;
     }
 
@@ -98,14 +62,17 @@ function renderSidebar() {
             <p>Posto de Saúde Digital</p>
         </div>
     `;
-    
     container.innerHTML = menuHTML;
+    
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 }
 
 /**
  * Faz o upload da foto de perfil para o Supabase Storage via backend
  */
-async function uploadProfilePhoto(input) {
+export async function uploadProfilePhoto(input) {
     if (!input.files || !input.files[0]) return;
 
     const file = input.files[0];
@@ -135,37 +102,13 @@ async function uploadProfilePhoto(input) {
     }
 }
 
-function verificarSessao() {
-    const token = localStorage.getItem('token');
-    const tipo = localStorage.getItem('tipo_usuario');
-    const path = window.location.pathname;
-
-    if (!token && !localStorage.getItem('usuario_id')) {
-        window.location.href = '/login';
-        return;
-    }
-
-    // Proteção de Prefixo (Segurança Visual e Rotas)
-    if (tipo === 'aluno' && (path.startsWith('/profissional') || path === '/logs' || path === '/itens')) {
-        showToast('Acesso negado: Perfil de aluno sem privilégios administrativos.');
-        window.location.href = '/aluno/dashboard';
-    } else if (tipo !== 'aluno' && path.startsWith('/aluno')) {
-        window.location.href = '/profissional/dashboard';
-    }
-}
-
-function sairDoSistema() {
-    localStorage.clear();
-    window.location.href = '/';
-}
-
 /** =========================================================
  * AUTENTICAÇÃO
  * ========================================================= */
 /**
  * Salva um novo item no inventário, incluindo upload de imagem opcional
  */
-async function salvarNovoItem(event) {
+export async function salvarNovoItem(event) {
     event.preventDefault();
     const btn = document.getElementById('btn-salvar-item');
     const inputFoto = document.getElementById('fotoItem');
@@ -221,241 +164,10 @@ async function salvarNovoItem(event) {
         btn.innerText = 'Gravar Item';
     }
 }
-
-async function fazerLogin(event) {
-    if (event) event.preventDefault();
-    
-    const email = document.getElementById('email')?.value;
-    const senha = document.getElementById('senha')?.value;
-    const btn = document.getElementById('btn-entrar');
-
-    if (btn) { btn.innerText = "Autenticando..."; btn.disabled = true; }
-
-    try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, senha })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            if (data.requires_2fa) {
-                // Transição para Etapa 2 (2FA)
-                localStorage.setItem('temp_login_email', data.email);
-                document.getElementById('login-step-1').style.display = 'none';
-                document.getElementById('login-step-2').style.display = 'block';
-                
-                // Inicializa os inputs de código
-                inicializarInputsCodigo();
-                
-                // Configura o botão de verificação
-                const btnVerify = document.getElementById('btn-verify-2fa');
-                btnVerify.onclick = () => verificarCodigo2FA(data.email);
-                
-                showToast(data.message);
-            } else {
-                salvarSessaoERecirecionar(data);
-            }
-        } else {
-            shakeElement('.login-card');
-            showToast(data.error || 'Credenciais inválidas.', 'error');
-            if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
-        }
-    } catch (error) {
-        console.error('Erro no login:', error);
-        showToast('Erro ao conectar com o servidor.');
-        if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
-    }
-}
-
-function inicializarInputsCodigo() {
-    const inputs = document.querySelectorAll('.code-input');
-    inputs.forEach((input, index) => {
-        input.value = '';
-        input.addEventListener('keyup', (e) => {
-            if (e.key >= 0 && e.key <= 9) {
-                if (index < inputs.length - 1) inputs[index + 1].focus();
-            } else if (e.key === 'Backspace') {
-                if (index > 0) inputs[index - 1].focus();
-            }
-        });
-        
-        // Auto focus no primeiro
-        if (index === 0) setTimeout(() => input.focus(), 100);
-    });
-}
-
-async function verificarCodigo2FA(email) {
-    const inputs = document.querySelectorAll('.code-input');
-    const codigo = Array.from(inputs).map(i => i.value).join('');
-    const btn = document.getElementById('btn-verify-2fa');
-
-    if (codigo.length < 6) {
-        return showToast('Por favor, insira o código de 6 dígitos.');
-    }
-
-    btn.innerText = "Verificando...";
-    btn.disabled = true;
-
-    try {
-        const verifyResp = await fetch(`${API_URL}/login/verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, codigo })
-        });
-        const verifyData = await verifyResp.json();
-
-        if (verifyResp.ok) {
-            salvarSessaoERecirecionar(verifyData);
-        } else {
-            shakeElement('.login-card');
-            showToast(verifyData.error || 'Código 2FA inválido.', 'error');
-            btn.innerText = "Verificar Código";
-            btn.disabled = false;
-        }
-    } catch (error) {
-        showToast('Erro na verificação.');
-        btn.innerText = "Verificar Código";
-        btn.disabled = false;
-    }
-}
-
-function salvarSessaoERecirecionar(data) {
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('usuario_id', data.id);
-    localStorage.setItem('tipo_usuario', data.tipo_usuario);
-    localStorage.setItem('usuario_nome', data.nome);
-    localStorage.setItem('usuario_foto', data.foto_url || '');
-    localStorage.setItem('usuario_especialidade', data.especialidade || '');
-
-    window.location.href = data.tipo_usuario === 'aluno' ? '/aluno/dashboard' : '/profissional/dashboard';
-}
-
-function voltarParaLogin() {
-    document.getElementById('login-step-2').style.display = 'none';
-    document.getElementById('login-step-1').style.display = 'block';
-    const btn = document.getElementById('btn-entrar');
-    if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
-}
-
-/**
- * Adiciona efeito de vibração (shake) a um elemento
- */
-function shakeElement(selector) {
-    const el = document.querySelector(selector);
-    if (!el) return;
-    el.classList.remove('shake');
-    void el.offsetWidth; // Trigger reflow
-    el.classList.add('shake');
-}
-
-/**
- * Recuperação de Senha via SMS (Requisito H)
- */
-async function solicitarRecuperacao() {
-    const email = prompt("Informe seu e-mail para receber o código via SMS:");
-    if (!email) return;
-
-    showToast("Um código de segurança foi enviado para o seu celular cadastrado.");
-    const codigo = prompt("Digite o código recebido via SMS:");
-    
-    if (codigo && codigo.length === 6) {
-        const novaSenha = prompt("Digite sua nova senha:");
-        if (novaSenha) {
-            showToast("Senha redefinida com sucesso! Você já pode entrar.");
-        }
-    } else {
-        showToast("Código inválido.");
-    }
-}
-
-
-async function realizarCadastro(event) {
-    if (event) event.preventDefault();
-
-    const nome = document.getElementById('nome').value;
-    const email = document.getElementById('email').value;
-    const tipo_usuario = document.getElementById('tipo_usuario').value;
-    const senha = document.getElementById('senha').value;
-    const confirmar = document.getElementById('confirmar_senha').value;
-
-    if (senha !== confirmar) {
-        return showToast("As senhas não coincidem!");
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/cadastro`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome, email, senha, tipo_usuario })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showToast("Cadastro realizado com sucesso! Fazendo login...");
-            // Preenche o login automaticamente e entra
-            localStorage.setItem('temp_email', email);
-            localStorage.setItem('temp_senha', senha);
-            
-            // Tenta logar imediatamente
-            const loginResp = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, senha })
-            });
-            const loginData = await loginResp.json();
-            
-            if (loginResp.ok) {
-                if (loginData.requires_2fa) {
-                    const codigo = prompt(`${loginData.message}\n\nDigite o código de 6 dígitos recebido:`);
-                    if (codigo) {
-                        const verifyResp = await fetch(`${API_URL}/login/verify`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: loginData.email, codigo })
-                        });
-                        const verifyData = await verifyResp.json();
-                        if (verifyResp.ok) {
-                            localStorage.setItem('token', verifyData.token);
-                            localStorage.setItem('usuario_id', verifyData.id);
-                            localStorage.setItem('tipo_usuario', verifyData.tipo_usuario);
-                            localStorage.setItem('usuario_nome', nome.split(' ')[0]);
-                            
-                            window.location.href = verifyData.tipo_usuario === 'aluno' ? '/aluno/dashboard' : '/profissional/dashboard';
-                        } else {
-                            showToast(verifyData.error || 'Código inválido.');
-                            window.location.href = '/login';
-                        }
-                    } else {
-                        window.location.href = '/login';
-                    }
-                } else {
-                    localStorage.setItem('token', loginData.token);
-                    localStorage.setItem('usuario_id', loginData.id);
-                    localStorage.setItem('tipo_usuario', loginData.tipo_usuario);
-                    localStorage.setItem('usuario_nome', nome.split(' ')[0]);
-                    
-                    window.location.href = loginData.tipo_usuario === 'aluno' ? '/aluno/dashboard' : '/profissional/dashboard';
-                }
-            } else {
-                window.location.href = '/login';
-            }
-        } else {
-            showToast(data.error || "Erro ao realizar cadastro.");
-        }
-    } catch (error) {
-        console.error("Erro no cadastro:", error);
-        showToast("Erro ao conectar com o servidor.");
-    }
-}
-
 /** =========================================================
  * DASHBOARD PROFISSIONAL
  * ========================================================= */
-async function carregarDashboardProfissional() {
+export async function carregarDashboardProfissional() {
     const tbody = document.getElementById('lista-pacientes-hoje');
     if (!tbody) return;
 
@@ -478,7 +190,7 @@ async function carregarDashboardProfissional() {
     }
 }
 
-function renderizarTabelaProfissional(pacientes) {
+export function renderizarTabelaProfissional(pacientes) {
     const tbody = document.getElementById('lista-pacientes-hoje');
     if (!tbody) return;
 
@@ -505,10 +217,13 @@ function renderizarTabelaProfissional(pacientes) {
             <td><span class="badge ${p.status === 'Atendido' ? 'active' : (p.status === 'Pendente' ? 'warning' : '')}">${p.status}</span></td>
             <td>
                 ${p.status !== 'Atendido' ? `
-                    <button onclick="abrirModalAtendimento('${p.id}')" class="btn-green" style="padding: 2px 8px; font-size: 0.8rem;">Atender</button>
-                    <button onclick="mudarStatus('${p.id}', 'Cancelado')" style="background:none; border:none; cursor:pointer;" title="Recusar">&#x274c;</button>
+                    <button onclick="abrirModalAtendimento('${p.id}')" class="btn-green" style="padding: 4px 8px; font-size: 0.8rem;">✅ Atender</button>
+                    <button onclick="mudarStatus('${p.id}', 'Cancelado')" style="background:none; border:none; cursor:pointer; color:red;" title="Recusar">❌</button>
                 ` : `
-                    <button onclick="verProntuario('${p.observacoes || ''}')" style="background:none; border:none; cursor:pointer; font-size:1.2rem;" title="Ver Prontuário">📝</button>
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        <button onclick="verProntuario('${p.observacoes || ''}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem;" title="Ver Prontuário">👁️ Ver</button>
+                        <button onclick="exportarPDF('receita', '${p.id}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem; background:var(--green-dark);" title="Baixar Receita">💊 Receita</button>
+                    </div>
                 `}
             </td>
         `;
@@ -519,7 +234,7 @@ function renderizarTabelaProfissional(pacientes) {
     if(document.getElementById('stat-aguardando')) document.getElementById('stat-aguardando').innerText = aguardando;
 }
 
-function filtrarAgendamentosProfissional() {
+export function filtrarAgendamentosProfissional() {
     const dia = document.getElementById('filtro-dia')?.value;
     const mes = document.getElementById('filtro-mes')?.value;
     const ano = document.getElementById('filtro-ano')?.value;
@@ -543,7 +258,7 @@ function filtrarAgendamentosProfissional() {
     renderizarTabelaProfissional(filtrados);
 }
 
-async function mudarStatus(id, novoStatus) {
+export async function mudarStatus(id, novoStatus) {
     if (!confirm(`Deseja alterar o status para ${novoStatus}?`)) return;
 
     try {
@@ -568,7 +283,7 @@ async function mudarStatus(id, novoStatus) {
 /** =========================================================
  * DASHBOARD ALUNO - NOVO SISTEMA DINÂMICO
  * ========================================================= */
-async function carregarDashboardAluno() {
+export async function carregarDashboardAluno() {
     // Carregar próximo agendamento
     const proximoCard = document.getElementById('proximo-agendamento-card');
     const usuarioId = localStorage.getItem('usuario_id');
@@ -580,18 +295,26 @@ async function carregarDashboardAluno() {
             if (ags.length > 0) {
                 const prox = ags[0];
                 proximoCard.innerHTML = `
-                    <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px; color:#444;">
-                        <span style="color:red">&#x1f4cc;</span> ${prox.especialidade}
+                    <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px; color:#444; display:flex; align-items:center; gap:8px;">
+                        <i data-lucide="stethoscope" style="width:18px;height:18px;color:red;"></i> ${prox.especialidade}
                     </div>
                     <div class="stats-text" style="color:#555;">
-                        &#x1f4c5; <span>${prox.data} - ${prox.hora}</span>
+                        <i data-lucide="calendar" style="width:16px;height:16px;"></i> <span>${prox.data} - ${prox.hora}</span>
                     </div>
                     <div class="stats-text" style="color:#555;">
-                        &#x1f4cd; Profissional: ${prox.usuarios ? prox.usuarios.nome : 'N/A'}
+                        <i data-lucide="user" style="width:16px;height:16px;"></i> Profissional: ${prox.usuarios ? prox.usuarios.nome : 'N/A'}
                     </div>
                 `;
+                if (window.lucide) window.lucide.createIcons();
             } else {
-                proximoCard.innerHTML = '<p style="color:#999; font-size:0.9rem;">Você não tem agendamentos próximos.</p>';
+                proximoCard.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; padding: 10px;">
+                        <i data-lucide="calendar-heart" style="width: 48px; height: 48px; color: #ccc; margin-bottom: 10px;"></i>
+                        <h4 style="color:#444; margin-bottom: 5px;">Tudo tranquilo por aqui</h4>
+                        <p style="color:#999; font-size:0.9rem; text-align:center;">Você não tem agendamentos próximos. Agende abaixo se precisar.</p>
+                    </div>
+                `;
+                if (window.lucide) window.lucide.createIcons();
             }
         }
 
@@ -603,7 +326,7 @@ async function carregarDashboardAluno() {
     }
 }
 
-async function inicializarFormularioAgendamento() {
+export async function inicializarFormularioAgendamento() {
     // Definir datas min e max do input date
     const inputData = document.getElementById('data-agendamento');
     if (inputData) {
@@ -626,7 +349,7 @@ let agendamentoSelecionado = {
     profissional_nome: ''
 };
 
-async function atualizarSlotsAutomaticos() {
+export async function atualizarSlotsAutomaticos() {
     const especialidade = document.getElementById('sel-especialidade').value;
     const dataStr = document.getElementById('data-agendamento').value;
     const sectionHorarios = document.getElementById('section-horarios');
@@ -725,7 +448,7 @@ async function atualizarSlotsAutomaticos() {
     }
 }
 
-function selecionarHorarioSimplificado(hora, profId, profNome) {
+export function selecionarHorarioSimplificado(hora, profId, profNome) {
     // UI Feedback
     document.querySelectorAll('.btn-horario').forEach(b => b.classList.remove('selected'));
     event.target.classList.add('selected');
@@ -756,7 +479,7 @@ function selecionarHorarioSimplificado(hora, profId, profNome) {
     }
 }
 
-async function confirmarAgendamentoSimplificado() {
+export async function confirmarAgendamentoSimplificado() {
     const usuarioId = localStorage.getItem('usuario_id');
     
     if (!usuarioId) {
@@ -792,7 +515,7 @@ async function confirmarAgendamentoSimplificado() {
     }
 }
 
-function limparHorarios() {
+export function limparHorarios() {
     const containerHorarios = document.getElementById('horarios-container');
     const gridHorarios = document.getElementById('grid-horarios');
     
@@ -802,7 +525,7 @@ function limparHorarios() {
     limparResumo();
 }
 
-function limparResumo() {
+export function limparResumo() {
     const resumo = document.getElementById('resumo-agendamento');
     const btnConfirmar = document.getElementById('btn-confirmar-agendamento');
     
@@ -810,7 +533,7 @@ function limparResumo() {
     if (btnConfirmar) btnConfirmar.style.display = 'none';
 }
 
-async function carregarAgendamentosAluno() {
+export async function carregarAgendamentosAluno() {
     const tbody = document.getElementById('tabela-agendamentos');
     if (!tbody) return;
 
@@ -826,13 +549,20 @@ async function carregarAgendamentosAluno() {
     }
 }
 
-function renderizarTabelaAluno(agendamentos) {
+export function renderizarTabelaAluno(agendamentos) {
     const tbody = document.getElementById('tabela-agendamentos');
     if (!tbody) return;
 
     tbody.innerHTML = '';
     if (agendamentos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum agendamento encontrado para os filtros selecionados.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 40px;">
+            <div style="display:flex; flex-direction:column; align-items:center; color:#666;">
+                <i data-lucide="calendar-x" style="width: 48px; height: 48px; margin-bottom:15px; color:#ccc;"></i>
+                <h3 style="margin-bottom:10px;">Nenhuma consulta marcada</h3>
+                <p style="font-size:0.9rem;">Você ainda não possui histórico de agendamentos.</p>
+            </div>
+        </td></tr>`;
+        if (window.lucide) window.lucide.createIcons();
         return;
     }
 
@@ -845,8 +575,14 @@ function renderizarTabelaAluno(agendamentos) {
             <td>${a.usuarios ? a.usuarios.nome : 'N/A'}</td>
             <td style="font-weight:bold;">${a.status}</td>
             <td>
-                ${a.status === 'Pendente' ? `<button onclick="mudarStatus('${a.id}', 'Cancelado')" style="border:none; background:transparent; cursor:pointer;" title="Cancelar">&#x1f5d1;</button>` : ''}
-                ${a.status === 'Atendido' ? `<button onclick="verProntuario('${a.observacoes || ''}')" class="btn-green" style="padding:2px 8px; font-size:0.8rem;">👁️ Ver Resumo</button>` : ''}
+                ${a.status === 'Pendente' ? `<button onclick="mudarStatus('${a.id}', 'Cancelado')" style="border:none; background:transparent; cursor:pointer; color: red;" title="Cancelar">❌</button>` : ''}
+                ${a.status === 'Atendido' ? `
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        <button onclick="verProntuario('${a.observacoes || ''}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem;" title="Ver Resumo">👁️ Ver</button>
+                        <button onclick="exportarPDF('atestado', '${a.id}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem; background:var(--green-dark);" title="Baixar Atestado">📄 Atestado</button>
+                        <button onclick="exportarPDF('receita', '${a.id}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem; background:#3498db;" title="Baixar Receita Médica">💊 Receita</button>
+                    </div>
+                ` : ''}
                 ${a.status !== 'Pendente' && a.status !== 'Atendido' ? '---' : ''}
             </td>
         `;
@@ -857,7 +593,7 @@ function renderizarTabelaAluno(agendamentos) {
     if(document.getElementById('total-pendente')) document.getElementById('total-pendente').innerText = agendamentos.filter(a => a.status === 'Pendente').length;
 }
 
-function filtrarAgendamentosAluno() {
+export function filtrarAgendamentosAluno() {
     const mes = document.getElementById('filtro-mes')?.value;
     const ano = document.getElementById('filtro-ano')?.value;
     const status = document.getElementById('filtro-status')?.value;
@@ -880,7 +616,7 @@ function filtrarAgendamentosAluno() {
 /** =========================================================
  * INVENTÁRIO (PROFISSIONAL)
  * ========================================================= */
-async function carregarItens() {
+export async function carregarItens() {
     const tbody = document.getElementById('tabela-itens');
     if (!tbody) return;
 
@@ -894,7 +630,7 @@ async function carregarItens() {
     }
 }
 
-function renderizarTabelaItens(itens) {
+export function renderizarTabelaItens(itens) {
     const tbody = document.getElementById('tabela-itens');
     if (!tbody) return;
 
@@ -924,7 +660,7 @@ function renderizarTabelaItens(itens) {
     if (document.getElementById('total-itens')) document.getElementById('total-itens').innerText = itens.length;
 }
 
-function filtrarItens() {
+export function filtrarItens() {
     const busca = document.getElementById('filtro-busca')?.value.toLowerCase();
     const status = document.getElementById('filtro-status')?.value;
 
@@ -943,85 +679,16 @@ function filtrarItens() {
     renderizarTabelaItens(filtrados);
 }
 
-async function deletarItem(id) {
+export async function deletarItem(id) {
     if (!confirm("Excluir item?")) return;
     await fetch(`${API_URL}/itens/${id}`, { method: 'DELETE' });
     carregarItens();
 }
 
 /** =========================================================
- * MAPA E DISTÂNCIA (LEAFLET)
- * ========================================================= */
-function getDistanciaHaversine(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return (R * c).toFixed(2);
-}
-
-async function calcularDistanciaFrontend() {
-    const valA = document.getElementById('coord-a').value;
-    const valB = document.getElementById('coord-b').value;
-    const resultBox = document.getElementById('resultado-distancia');
-    const resultVal = document.getElementById('valor-distancia');
-
-    if (!valA || !valB) return showToast("Por favor, selecione as duas origens.");
-    const [lat1, lon1] = valA.split(',').map(Number);
-    const [lat2, lon2] = valB.split(',').map(Number);
-    
-    const distancia = getDistanciaHaversine(lat1, lon1, lat2, lon2);
-    resultBox.style.display = 'block';
-    resultVal.innerText = distancia;
-}
-
-/** =========================================================
- * EXPORTAR PDF - Gerar relatórios (Escalável para vários tipos)
- * ========================================================= */
-async function exportarPDF(tipo = 'itens') {
-    try {
-        let url = `${API_URL}/relatorio?tipo=${tipo}`;
-        
-        // Se for relatório de agendamentos, passamos o profissional_id
-        if (tipo === 'agendamentos') {
-            const profId = localStorage.getItem('usuario_id');
-            if (!profId || profId === 'undefined' || profId === 'null') {
-                showToast("Erro: ID do profissional não encontrado.");
-                return;
-            }
-            url += `&profissional_id=${profId}`;
-        }
-
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            showToast('Erro ao gerar relatório PDF.');
-            return;
-        }
-
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `relatorio_${tipo}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-        console.error('Erro ao baixar o PDF:', error);
-        showToast('Erro ao conectar com o servidor para baixar o PDF.');
-    }
-}
-
-/** =========================================================
  * CONFIGURAÇÃO DE DISPONIBILIDADE (PROFISSIONAL) - MATRIZ
  * ========================================================= */
-async function carregarSetupProfissional() {
+export async function carregarSetupProfissional() {
     const matrizTbody = document.getElementById('matriz-horarios-prof');
     if (!matrizTbody) return;
 
@@ -1080,7 +747,7 @@ async function carregarSetupProfissional() {
     }
 }
 
-async function salvarDisponibilidade() {
+export async function salvarDisponibilidade() {
     const btn = document.querySelector('button[onclick="salvarDisponibilidade()"]');
     if(btn) { btn.innerText = "Salvando..."; btn.disabled = true; }
 
@@ -1136,17 +803,17 @@ async function salvarDisponibilidade() {
     }
 }
 
-function selecionarTodos() {
+export function selecionarTodos() {
     document.querySelectorAll('.chk-disponibilidade').forEach(chk => chk.checked = true);
     document.querySelectorAll('.chk-linha-toda').forEach(chk => chk.checked = true);
 }
 
-function deselecionarTodos() {
+export function deselecionarTodos() {
     document.querySelectorAll('.chk-disponibilidade').forEach(chk => chk.checked = false);
     document.querySelectorAll('.chk-linha-toda').forEach(chk => chk.checked = false);
 }
 
-function marcarLinhaToda(horario, checkboxMestre) {
+export function marcarLinhaToda(horario, checkboxMestre) {
     const checkboxesDaLinha = document.querySelectorAll(`.chk-disponibilidade[data-horario="${horario}"]`);
     checkboxesDaLinha.forEach(chk => {
         chk.checked = checkboxMestre.checked;
@@ -1156,7 +823,7 @@ function marcarLinhaToda(horario, checkboxMestre) {
 /** =========================================================
  * LOGS DE SISTEMA
  * ========================================================= */
-async function carregarLogs() {
+export async function carregarLogs() {
     const tbody = document.getElementById('tabela-logs');
     if (!tbody) return;
 
@@ -1173,7 +840,7 @@ async function carregarLogs() {
     }
 }
 
-function renderizarTabelaLogs(logs) {
+export function renderizarTabelaLogs(logs) {
     const tbody = document.getElementById('tabela-logs');
     if (!tbody) return;
 
@@ -1199,7 +866,7 @@ function renderizarTabelaLogs(logs) {
     });
 }
 
-function filtrarLogs() {
+export function filtrarLogs() {
     const dataFiltro = document.getElementById('dataFiltro')?.value;
     const acao = document.getElementById('filtro-acao')?.value.toLowerCase();
 
@@ -1215,7 +882,7 @@ function filtrarLogs() {
     renderizarTabelaLogs(filtrados);
 }
 
-function limparFiltros(tipo) {
+export function limparFiltros(tipo) {
     if (tipo === 'agendamentos-aluno') {
         document.querySelectorAll('.filter-input').forEach(i => i.value = '');
         renderizarTabelaAluno(originalAgendamentos);
@@ -1230,11 +897,10 @@ function limparFiltros(tipo) {
         renderizarTabelaLogs(originalLogs);
     }
 }
-
 /**
  * Dashboard de Estatísticas Gerais (Gestão)
  */
-async function carregarEstatisticas() {
+export async function carregarEstatisticas() {
     // Configurações Globais do Chart.js para visual Premium
     if (window.Chart) {
         Chart.defaults.font.family = "'Inter', sans-serif";
@@ -1370,37 +1036,58 @@ async function carregarEstatisticas() {
         showToast('Erro ao carregar estatísticas: ' + error.message);
     }
 }
-
 /** =========================================================
  * PRONTUÁRIO DIGITAL - MÓDULO DE ATENDIMENTO
  * ========================================================= */
 
-function abrirModalAtendimento(id) {
+export function abrirModalAtendimento(id) {
     const modal = document.createElement('div');
     modal.id = 'modal-prontuario';
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal-content">
-            <h3>📝 Finalizar Atendimento</h3>
-            <p>Escreva abaixo as orientações ou prescrição para o aluno:</p>
-            <textarea id="texto-prontuario" class="form-control" rows="6" placeholder="Ex: Paciente com sintomas de gripe. Prescrito repouso e hidratação..."></textarea>
-            <div class="modal-actions">
-                <button onclick="salvarAtendimento('${id}')" class="btn-green">Salvar e Finalizar</button>
+        <div class="modal-content" style="max-width: 600px; text-align: left;">
+            <h3 style="margin-bottom: 15px; color: var(--green-primary);"><i data-lucide="stethoscope" style="vertical-align: middle;"></i> Prontuário Eletrônico (PEP)</h3>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 5px;">Sintomas Relatados:</label>
+                <textarea id="pep-sintomas" class="form-control" rows="2" placeholder="Descreva os sintomas do paciente..."></textarea>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 5px;">Diagnóstico / Avaliação:</label>
+                <input type="text" id="pep-diagnostico" class="form-control" placeholder="CID ou avaliação clínica...">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 5px;">Prescrição Médica / Orientações:</label>
+                <textarea id="pep-prescricao" class="form-control" rows="4" placeholder="Medicamentos, dosagem e tempo de uso..."></textarea>
+            </div>
+
+            <div class="modal-actions" style="justify-content: flex-end;">
                 <button onclick="fecharModalProntuario()" class="btn-clear">Cancelar</button>
+                <button onclick="salvarAtendimento('${id}')" class="btn-green">Salvar Prontuário</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+    if (window.lucide) window.lucide.createIcons();
 }
 
-function fecharModalProntuario() {
+export function fecharModalProntuario() {
     const modal = document.getElementById('modal-prontuario');
     if (modal) modal.remove();
 }
 
-async function salvarAtendimento(id) {
-    const observacoes = document.getElementById('texto-prontuario').value;
-    if (!observacoes) return showToast("Por favor, escreva o prontuário antes de finalizar.");
+export async function salvarAtendimento(id) {
+    const sintomas = document.getElementById('pep-sintomas').value;
+    const diagnostico = document.getElementById('pep-diagnostico').value;
+    const prescricao = document.getElementById('pep-prescricao').value;
+
+    if (!sintomas && !diagnostico && !prescricao) {
+        return showToast("Por favor, preencha ao menos um campo do prontuário.");
+    }
+
+    const observacoes = JSON.stringify({ sintomas, diagnostico, prescricao });
 
     try {
         const response = await fetch(`${API_URL}/agendamentos/${id}/status`, {
@@ -1421,63 +1108,41 @@ async function salvarAtendimento(id) {
     }
 }
 
-function verProntuario(texto) {
+export function verProntuario(textoJSON) {
+    let dados = { sintomas: 'N/A', diagnostico: 'N/A', prescricao: 'N/A' };
+    try {
+        dados = JSON.parse(textoJSON);
+    } catch (e) {
+        dados.prescricao = textoJSON; // Retrocompatibilidade
+    }
+
     const modal = document.createElement('div');
     modal.id = 'modal-prontuario';
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal-content">
-            <h3>📑 Orientações Médicas</h3>
-            <div class="prontuario-view" style="background:#f9f9f9; padding:15px; border-radius:8px; margin: 15px 0; text-align:left; color:#333; line-height:1.6;">
-                ${texto.replace(/\n/g, '<br>')}
+        <div class="modal-content" style="max-width: 600px; text-align: left;">
+            <h3 style="margin-bottom: 15px; color: var(--green-primary);"><i data-lucide="file-text" style="vertical-align: middle;"></i> Prontuário Eletrônico</h3>
+            
+            <div class="prontuario-view" style="background:#f9f9f9; padding:15px; border-radius:8px; margin: 15px 0; border-left: 4px solid var(--green-primary); color:#333; line-height:1.6;">
+                <p><strong>Sintomas Relatados:</strong><br> ${dados.sintomas || 'N/A'}</p>
+                <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                <p><strong>Diagnóstico / Avaliação:</strong><br> ${dados.diagnostico || 'N/A'}</p>
+                <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                <p><strong>Prescrição / Orientações:</strong><br> ${(dados.prescricao || 'N/A').replace(/\n/g, '<br>')}</p>
             </div>
-            <div class="modal-actions">
-                <button onclick="fecharModalProntuario()" class="btn-green">Fechar</button>
+
+            <div class="modal-actions" style="justify-content: flex-end;">
+                <button onclick="fecharModalProntuario()" class="btn-green">Fechar Prontuário</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+    if (window.lucide) window.lucide.createIcons();
 }
-
-/** =========================================================
- * SISTEMA DE NOTIFICAÇÕES (TOASTS)
- * ========================================================= */
-function showToast(message, type = 'success') {
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        document.body.appendChild(container);
-    }
-
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    
-    // Ícones dinâmicos
-    const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
-    };
-
-    toast.innerHTML = `<span>${icons[type] || '🔔'}</span> <span>${message}</span>`;
-    
-    // Click para fechar rápido
-    toast.onclick = () => toast.remove();
-
-    container.appendChild(toast);
-
-    // Auto-remove após 3 segundos
-    setTimeout(() => {
-        if (toast.parentNode) toast.remove();
-    }, 3000);
-}
-
 /**
  * Calcula a distância entre dois pontos selecionados na página de mapa (Requisito I)
  */
-async function calcularDistanciaFrontend() {
+export async function calcularDistanciaFrontend() {
     const coordA = document.getElementById('coord-a').value;
     const coordB = document.getElementById('coord-b').value;
     const resBox = document.getElementById('resultado-distancia');
@@ -1515,3 +1180,35 @@ async function calcularDistanciaFrontend() {
         showToast("Erro de conexão com o servidor.", "error");
     }
 }
+
+
+// Exposing functions to global scope for inline HTML handlers
+window.renderSidebar = renderSidebar;
+window.uploadProfilePhoto = uploadProfilePhoto;
+window.salvarNovoItem = salvarNovoItem;
+window.carregarDashboardProfissional = carregarDashboardProfissional;
+window.filtrarAgendamentosProfissional = filtrarAgendamentosProfissional;
+window.mudarStatus = mudarStatus;
+window.carregarDashboardAluno = carregarDashboardAluno;
+window.atualizarSlotsAutomaticos = atualizarSlotsAutomaticos;
+window.selecionarHorarioSimplificado = selecionarHorarioSimplificado;
+window.confirmarAgendamentoSimplificado = confirmarAgendamentoSimplificado;
+window.carregarAgendamentosAluno = carregarAgendamentosAluno;
+window.filtrarAgendamentosAluno = filtrarAgendamentosAluno;
+window.carregarItens = carregarItens;
+window.filtrarItens = filtrarItens;
+window.deletarItem = deletarItem;
+window.calcularDistanciaFrontend = calcularDistanciaFrontend;
+window.carregarSetupProfissional = carregarSetupProfissional;
+window.salvarDisponibilidade = salvarDisponibilidade;
+window.selecionarTodos = selecionarTodos;
+window.deselecionarTodos = deselecionarTodos;
+window.marcarLinhaToda = marcarLinhaToda;
+window.carregarLogs = carregarLogs;
+window.filtrarLogs = filtrarLogs;
+window.limparFiltros = limparFiltros;
+window.carregarEstatisticas = carregarEstatisticas;
+window.abrirModalAtendimento = abrirModalAtendimento;
+window.fecharModalProntuario = fecharModalProntuario;
+window.salvarAtendimento = salvarAtendimento;
+window.verProntuario = verProntuario;

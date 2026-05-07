@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cálculo de Distância e Mapa - Localização IFCE</title>
-    <link rel="stylesheet" href="/public/style.css">
+    <link rel="stylesheet" href="/public/variables.css">
+    <link rel="stylesheet" href="/public/layout.css">
+    <link rel="stylesheet" href="/public/components.css">
+    <link rel="stylesheet" href="/public/pages.css">
     
     <!-- Leaflet CSS e JS para o mapa (OpenStreetMap) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -17,6 +20,7 @@
         .result-box { margin-top: 20px; padding: 15px; background: #e8f5e9; border-left: 5px solid var(--green-primary); display: none; }
     </style>
     <link rel="icon" href="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/imagesifceredondo.JPG" type="image/x-icon">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body style="background-color: #f4f7f6;">
     <header class="top-header">
@@ -99,7 +103,7 @@
         </main>
     </div>
 
-    <script src="/public/script.js"></script>
+    <script type="module" src="/public/main.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Atrasar levemente a renderização do mapa para garantir que a div tem tamanho

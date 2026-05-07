@@ -35,6 +35,14 @@ app.use("/uploads", express.static(uploads));
 // Health check para Vercel
 app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date() }));
 
+// Rota de Configuração (Envia chaves públicas para o Frontend usar Realtime)
+app.get("/api/config", (req, res) => {
+    res.json({
+        supabaseUrl: process.env.SUPABASE_URL,
+        supabaseAnonKey: process.env.SUPABASE_KEY
+    });
+});
+
 // Rota de Seed
 app.get("/api/seed", async (req, res) => {
     try {

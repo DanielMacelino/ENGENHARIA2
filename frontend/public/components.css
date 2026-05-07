@@ -1,0 +1,279 @@
+/* components.css */
+/* ========================================================
+   COMPONENTES GENÉRICOS DE PAINEL (Tabelas, botões)
+   ======================================================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.page-title {
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: #444;
+}
+
+.btn-green {
+    background-color: var(--green-primary);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-green:hover {
+    background-color: var(--green-dark);
+}
+
+.card {
+    background-color: white;
+    border-radius: 12px; /* Mais arredondado */
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* Sombra mais suave */
+    margin-bottom: 20px;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+}
+
+.flex-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.stats-text {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* ========================================================
+   TABELAS
+   ======================================================== */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.table-custom {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    border: 1px solid var(--border-color);
+}
+
+.table-custom th,
+.table-custom td {
+    border: 1px solid var(--border-color);
+    padding: 12px 15px;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.table-custom th {
+    background-color: #e6e6e6;
+    color: #444;
+    font-weight: 600;
+}
+
+.table-custom tr:nth-child(even) {
+    background-color: #fcfcfc;
+}
+
+/* ========================================================
+   FILTROS DE TABELA
+   ======================================================== */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+    align-items: flex-end;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.filter-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    outline: none;
+    background: #f9f9f9;
+    transition: border-color 0.2s;
+    min-width: 120px;
+}
+
+.filter-input:focus {
+    border-color: var(--green-primary);
+}
+
+.btn-filter {
+    background: var(--green-primary);
+    color: white;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-filter:hover {
+    background: var(--green-dark);
+}
+
+.btn-clear {
+    background: #eee;
+    color: #444;
+    border: 1px solid #ccc;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* ========================================================
+   ANIMAÇÕES E EFEITOS PREMIUM
+   ======================================================== */
+.fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.verification-code-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.code-input {
+    width: 45px;
+    height: 55px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.2s;
+    background: #fdfdfd;
+}
+
+.code-input:focus {
+    border-color: var(--green-primary);
+    box-shadow: 0 0 10px rgba(30, 109, 56, 0.2);
+    background: white;
+}
+
+.login-card {
+    border: none !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
+    transition: all 0.3s ease;
+}
+
+.btn-green {
+    background: linear-gradient(135deg, var(--green-primary), var(--green-dark)) !important;
+    box-shadow: 0 4px 12px rgba(30, 109, 56, 0.25) !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    border-radius: 25px !important;
+}
+
+.btn-green:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(30, 109, 56, 0.35) !important;
+}
+
+.btn-green:active {
+    transform: translateY(0);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Scrollbar Modernizada */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* ========================================================
+   SKELETON LOADERS
+   ======================================================== */
+@keyframes skeleton-loading {
+    0% { background-color: #e0e0e0; }
+    100% { background-color: #f0f0f0; }
+}
+
+.skeleton-box {
+    display: inline-block;
+    height: 1em;
+    position: relative;
+    overflow: hidden;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    animation: skeleton-loading 1s linear infinite alternate;
+}
+
+.skeleton-text { width: 100%; height: 1.2em; margin-bottom: 0.5rem; }
+.skeleton-title { width: 50%; height: 1.5em; margin-bottom: 1rem; }
+

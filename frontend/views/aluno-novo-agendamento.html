@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitar Consulta - IFCE</title>
     <script src="/config.js"></script>
-    <link rel="stylesheet" href="/public/style.css">
+    <link rel="stylesheet" href="/public/variables.css">
+    <link rel="stylesheet" href="/public/layout.css">
+    <link rel="stylesheet" href="/public/components.css">
+    <link rel="stylesheet" href="/public/pages.css">
     <style>
         .agendamento-container {
             max-width: 600px;
@@ -111,6 +114,7 @@
         }
     </style>
     <link rel="icon" href="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/imagesifceredondo.JPG" type="image/x-icon">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body onload="inicializarNovaPaginaAgendamento()">
@@ -185,7 +189,7 @@
         </main>
     </div>
 
-    <script src="/public/script.js"></script>
+    <script type="module" src="/public/main.js"></script>
     <script>
         function inicializarNovaPaginaAgendamento() {
             const inputData = document.getElementById('data-agendamento');

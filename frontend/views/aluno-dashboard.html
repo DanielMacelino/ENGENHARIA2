@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aluno Dashboard - Posto de Saúde</title>
     <script src="/config.js"></script>
-    <link rel="stylesheet" href="/public/style.css">
+    <link rel="stylesheet" href="/public/variables.css">
+    <link rel="stylesheet" href="/public/layout.css">
+    <link rel="stylesheet" href="/public/components.css">
+    <link rel="stylesheet" href="/public/pages.css">
     <style>
         .novo-agendamento-container {
             background: white;
@@ -148,6 +151,7 @@
         }
     </style>
     <link rel="icon" href="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/imagesifceredondo.JPG" type="image/x-icon">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body onload="carregarDashboardAluno()">
@@ -178,7 +182,9 @@
             <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:20px;">
 
             <div class="card" id="proximo-agendamento-card" style="border-left: 5px solid var(--green-primary); max-width: 400px; padding: 15px;">
-                Carregando próximo agendamento...
+                <div class="skeleton-box skeleton-title"></div>
+                <div class="skeleton-box skeleton-text"></div>
+                <div class="skeleton-box skeleton-text" style="width: 70%;"></div>
             </div>
 
             <!-- Seção de Ação Rápida -->
@@ -188,11 +194,13 @@
             <hr style="border:0; border-top:2px solid var(--border-color); margin-bottom:20px;">
 
             <div class="card" style="text-align: center; padding: 40px; background: #f0fdf4; border: 2px dashed var(--green-primary);">
-                <div style="font-size: 3rem; margin-bottom: 15px;">📅</div>
+                <div style="margin-bottom: 15px; display: flex; justify-content: center;">
+                    <i data-lucide="calendar-plus" style="width: 48px; height: 48px; color: var(--green-primary);"></i>
+                </div>
                 <h3 style="color: var(--green-primary); margin-bottom: 10px;">Precisa de um atendimento?</h3>
                 <p style="color: #666; margin-bottom: 25px;">Agende sua consulta com nossos profissionais de forma rápida e simples.</p>
-                <button onclick="window.location.href='/aluno/novo-agendamento'" class="btn-green" style="padding: 15px 40px; font-size: 1.1rem; font-weight: bold; cursor: pointer;">
-                    ➕ SOLICITAR NOVA CONSULTA
+                <button onclick="window.location.href='/aluno/novo-agendamento'" class="btn-green" style="padding: 15px 40px; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                    <i data-lucide="plus" style="width: 20px; height: 20px;"></i> SOLICITAR NOVA CONSULTA
                 </button>
             </div>
 
@@ -200,7 +208,7 @@
     </div>
 
     <!-- Script com lógica simulada -->
-    <script src="/public/script.js"></script>
+    <script type="module" src="/public/main.js"></script>
 </body>
 
 </html>

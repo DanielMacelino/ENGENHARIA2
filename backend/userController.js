@@ -328,6 +328,29 @@ export const generatePDF = async (req, res) => {
                 return res.status(500).json({ error: error.message });
             }
             dadosAgendamentos = agendamentos;
+        } else if (tipo === 'atestado' || tipo === 'receita') {
+            const { agendamento_id } = req.query;
+            if (!agendamento_id) {
+                return res.status(400).json({ error: "ID do agendamento é obrigatório." });
+            }
+
+            const { data: ag, error: errAg } = await supabase
+                .from("agendamentos")
+                .select(`
+                    data, hora, especialidade, status, observacoes,
+                    usuarios!agendamentos_usuario_id_fkey (nome),
+                    profissional:usuarios!agendamentos_profissional_id_fkey (nome)
+                `)
+                .eq("id", agendamento_id)
+                .single();
+            
+            if (errAg || !ag) {
+                return res.status(404).json({ error: "Agendamento não encontrado." });
+            }
+            if (ag.status !== 'Atendido') {
+                return res.status(400).json({ error: "Documento disponível apenas para consultas concluídas." });
+            }
+            dadosAgendamentos = [ag];
         } else {
             // Default: itens
             const { data: itens, error } = await supabase
@@ -358,9 +381,16 @@ export const generatePDF = async (req, res) => {
            .fontSize(10)
            .text("Relatório Gerencial do Posto de Saúde - Campus Crato", 50, 65);
         
+        let dataEmissao = new Date().toLocaleString('pt-BR');
+        if ((tipo === 'atestado' || tipo === 'receita') && dadosAgendamentos && dadosAgendamentos.length > 0) {
+            const ag = dadosAgendamentos[0];
+            const dataFmt = ag.data ? ag.data.split('-').reverse().join('/') : 'N/A';
+            dataEmissao = `${dataFmt} às ${ag.hora}`;
+        }
+
         doc.fillColor('#ffffff')
            .fontSize(8)
-           .text(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, 450, 75);
+           .text(`Emitido em: ${dataEmissao}`, 400, 75);
 
         doc.moveDown(5);
         doc.fillColor('#333333');
@@ -415,6 +445,60 @@ export const generatePDF = async (req, res) => {
             } else {
                 doc.fontSize(12).text("Nenhum agendamento encontrado para o profissional no mês atual.", { align: 'center' });
             }
+        } else if (tipo === 'atestado') {
+            // --- ATESTADO DE COMPARECIMENTO ---
+            const ag = dadosAgendamentos[0];
+            doc.fontSize(20).fillColor(greenPrimary).text("ATESTADO DE COMPARECIMENTO", 50, 150, { align: 'center' });
+            doc.moveDown(2);
+            
+            doc.fontSize(12).fillColor('#333333');
+            const dataFormatada = ag.data ? ag.data.split('-').reverse().join('/') : 'N/A';
+            const nomePaciente = ag.usuarios ? ag.usuarios.nome : 'N/A';
+            const nomeProfissional = ag.profissional ? ag.profissional.nome : 'N/A';
+            
+            const textoAtestado = `Atestamos para os devidos fins que o(a) paciente ${nomePaciente} compareceu à consulta da especialidade ${ag.especialidade} no Posto de Saúde do IFCE Campus Crato no dia ${dataFormatada} às ${ag.hora}.\n\nO atendimento foi devidamente concluído pelo(a) profissional ${nomeProfissional}.`;
+            
+            doc.text(textoAtestado, { align: 'justify', lineGap: 6 });
+            doc.moveDown(5);
+            
+            // Linha de assinatura
+            doc.strokeColor('#cccccc').lineWidth(1).moveTo(150, doc.y).lineTo(462, doc.y).stroke();
+            doc.moveDown(0.5);
+            doc.fontSize(10).fillColor('#666666').text(`Assinatura Eletrônica do Posto de Saúde\nIFCE Campus Crato`, { align: 'center' });
+        } else if (tipo === 'receita') {
+            // --- RECEITUÁRIO DIGITAL ---
+            const ag = dadosAgendamentos[0];
+            doc.fontSize(20).fillColor(greenPrimary).text("RECEITUÁRIO MÉDICO", 50, 150, { align: 'center' });
+            doc.moveDown(2);
+            
+            doc.fontSize(12).fillColor('#333333');
+            const dataFormatada = ag.data ? ag.data.split('-').reverse().join('/') : 'N/A';
+            const nomePaciente = ag.usuarios ? ag.usuarios.nome : 'N/A';
+            const nomeProfissional = ag.profissional ? ag.profissional.nome : 'N/A';
+
+            let prescricao = 'N/A';
+            try {
+                const obsJSON = JSON.parse(ag.observacoes);
+                prescricao = obsJSON.prescricao || 'N/A';
+            } catch (e) {
+                prescricao = ag.observacoes || 'N/A';
+            }
+            
+            doc.text(`Paciente: ${nomePaciente}`, { align: 'left', continued: false });
+            doc.text(`Data: ${dataFormatada}`, { align: 'left' });
+            doc.moveDown(2);
+            
+            doc.fontSize(14).text("PRESCRIÇÃO / ORIENTAÇÕES:", { underline: true });
+            doc.moveDown(1);
+            doc.fontSize(12).text(prescricao, { align: 'left', lineGap: 6 });
+            
+            doc.moveDown(5);
+            
+            // Linha de assinatura
+            doc.strokeColor('#cccccc').lineWidth(1).moveTo(150, doc.y).lineTo(462, doc.y).stroke();
+            doc.moveDown(0.5);
+            doc.fontSize(10).fillColor('#666666').text(`Dr(a). ${nomeProfissional}\n${ag.especialidade} - IFCE Campus Crato`, { align: 'center' });
+
         } else {
             // --- RELATÓRIO DE ITENS ---
             doc.fontSize(16).fillColor(greenPrimary).text("Inventário Geral de Itens", 50, 120);

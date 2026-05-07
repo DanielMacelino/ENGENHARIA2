@@ -9,8 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="/config.js"></script>
-    <link rel="stylesheet" href="/public/style.css">
+    <link rel="stylesheet" href="/public/variables.css">
+    <link rel="stylesheet" href="/public/layout.css">
+    <link rel="stylesheet" href="/public/components.css">
+    <link rel="stylesheet" href="/public/pages.css">
     <link rel="icon" href="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/imagesifceredondo.JPG" type="image/x-icon">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -35,8 +39,9 @@
 
             <div class="login-logo" style="flex-direction: column; gap: 0;">
                 <div style="display:flex; align-items:center; gap: 10px;">
-                    <span
-                        style="color:red; font-size:2rem; background:white; border-radius:50%; border:2px solid #ccc; padding: 2px 5px;">&#x1f4c5;</span>
+                    <div style="background:white; border-radius:50%; border:2px solid #ccc; padding: 6px; display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="calendar" style="color:red; width: 28px; height: 28px;"></i>
+                    </div>
                     <div style="text-align:left;">
                         <span style="display:block; color:var(--green-primary); font-size: 1.6rem;">IFCE Agenda</span>
                         <span
@@ -103,7 +108,7 @@
         </div>
     </div>
 
-    <script src="/public/script.js"></script>
+    <script type="module" src="/public/main.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,41 @@
+/* variables.css */
+/* style.css - Folha de estilo padrão para o frontend IFCE Posto de Saúde */
+:root {
+    --green-primary: #1e6d38;
+    /* Verde IFCE principal ativo */
+    --green-dark: #124523;
+    /* Verde header escuro */
+    --green-light: #4caf50;
+    /* Verde botão claro */
+    --bg-color: #f5f6fa;
+    --sidebar-bg: #222222;
+    --text-color: #333333;
+    --text-white: #ffffff;
+    --border-color: #e0e0e0;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Transição Global de Página */
+body {
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+}
+
+body.loaded {
+    opacity: 1;
+}
+
