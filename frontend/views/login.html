@@ -22,7 +22,9 @@
     <header class="top-header">
         <div class="header-left">
             <div class="logo-header">
-                <img src="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/images-removebg-preview%20(1).png" alt="Logo IFCE">
+                <div style="background: white; border-radius: 12px; padding: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
+                    <img src="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/images-removebg-preview%20(1).png" alt="Logo IFCE" style="height: 35px; width: auto; border-radius: 4px;">
+                </div>
             </div>
             <div class="header-titles">
                 <h1>Sistema de Agendamento - Posto de Saúde</h1>
@@ -37,15 +39,14 @@
     <div class="login-body">
         <div class="login-card">
 
-            <div class="login-logo" style="flex-direction: column; gap: 0;">
-                <div style="display:flex; align-items:center; gap: 10px;">
-                    <div style="background:white; border-radius:50%; border:2px solid #ccc; padding: 6px; display:flex; align-items:center; justify-content:center;">
-                        <i data-lucide="calendar" style="color:red; width: 28px; height: 28px;"></i>
+            <div class="login-logo" style="flex-direction: column; gap: 0; margin-bottom: 30px;">
+                <div style="display:flex; align-items:center; gap: 15px; justify-content: center;">
+                    <div style="background: linear-gradient(135deg, var(--green-light), var(--green-primary)); border-radius: 16px; padding: 12px; display:flex; align-items:center; justify-content:center; box-shadow: 0 8px 16px rgba(30, 109, 56, 0.3);">
+                        <i data-lucide="heart-pulse" style="color: white; width: 36px; height: 36px;"></i>
                     </div>
                     <div style="text-align:left;">
-                        <span style="display:block; color:var(--green-primary); font-size: 1.6rem;">IFCE Agenda</span>
-                        <span
-                            style="display:block; color:red; font-size: 0.9rem; font-weight:normal; margin-top:-5px;">CRATO</span>
+                        <span style="display:block; color:var(--text-color); font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px;">IFCE Saúde</span>
+                        <span style="display:block; color: var(--green-primary); font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Campus Crato</span>
                     </div>
                 </div>
             </div>
@@ -58,20 +59,22 @@
             <form id="form-login" class="login-form">
                 <!-- ETAPA 1: CREDENCIAIS -->
                 <div id="login-step-1" class="fade-in">
-                    <div>
-                        <input type="email" id="email" placeholder="Email" required>
+                    <div style="margin-bottom: 20px; position: relative;">
+                        <i data-lucide="mail" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; width: 20px;"></i>
+                        <input type="email" id="email" placeholder="Seu e-mail acadêmico" required style="width: 100%; padding: 16px 16px 16px 45px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem; transition: border-color 0.3s;">
                     </div>
-                    <div>
-                        <input type="password" id="senha" placeholder="Senha" required>
+                    <div style="margin-bottom: 25px; position: relative;">
+                        <i data-lucide="lock" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; width: 20px;"></i>
+                        <input type="password" id="senha" placeholder="Sua senha" required style="width: 100%; padding: 16px 16px 16px 45px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem; transition: border-color 0.3s;">
                     </div>
                     
-                    <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem; justify-content:flex-start; margin-top:5px; margin-bottom:10px;">
-                        <input type="checkbox" id="lembrar" style="width:auto;">
-                        <label for="lembrar">Lembre-me</label>
+                    <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem; justify-content:flex-start; margin-top:5px; margin-bottom:20px; color: var(--text-color);">
+                        <input type="checkbox" id="lembrar" style="width:18px; height: 18px; accent-color: var(--green-primary);">
+                        <label for="lembrar" style="cursor: pointer;">Mantenha-me conectado</label>
                     </div>
 
                     <button type="submit" class="btn-green" id="btn-entrar"
-                        style="border-radius:20px; width: 100%; justify-content:center;">Entrar</button>
+                        style="border-radius:12px; width: 100%; justify-content:center; padding: 16px; font-size: 1.1rem; font-weight: bold; box-shadow: 0 4px 12px rgba(30, 109, 56, 0.25);">Acessar o Sistema</button>
                     
                     <div style="margin-top:20px; font-size:0.85rem; color:#666;">
                         Esqueceu a senha? <a href="#" onclick="solicitarRecuperacao()" style="color:blue; text-decoration:none;">Redefinir via SMS.</a>
@@ -85,17 +88,17 @@
                         Insira o código de 6 dígitos enviado para o seu e-mail.
                     </p>
                     
-                    <div class="verification-code-container">
-                        <input type="text" maxlength="1" class="code-input" data-index="0">
-                        <input type="text" maxlength="1" class="code-input" data-index="1">
-                        <input type="text" maxlength="1" class="code-input" data-index="2">
-                        <input type="text" maxlength="1" class="code-input" data-index="3">
-                        <input type="text" maxlength="1" class="code-input" data-index="4">
-                        <input type="text" maxlength="1" class="code-input" data-index="5">
+                    <div class="verification-code-container" style="gap: 12px; margin-bottom: 30px;">
+                        <input type="text" maxlength="1" class="code-input" data-index="0" style="background: var(--bg-color); color: var(--text-color); border: 2px solid var(--border-color); border-radius: 12px; width: 50px; height: 60px; font-size: 1.5rem;">
+                        <input type="text" maxlength="1" class="code-input" data-index="1" style="background: var(--bg-color); color: var(--text-color); border: 2px solid var(--border-color); border-radius: 12px; width: 50px; height: 60px; font-size: 1.5rem;">
+                        <input type="text" maxlength="1" class="code-input" data-index="2" style="background: var(--bg-color); color: var(--text-color); border: 2px solid var(--border-color); border-radius: 12px; width: 50px; height: 60px; font-size: 1.5rem;">
+                        <input type="text" maxlength="1" class="code-input" data-index="3" style="background: var(--bg-color); color: var(--text-color); border: 2px solid var(--border-color); border-radius: 12px; width: 50px; height: 60px; font-size: 1.5rem;">
+                        <input type="text" maxlength="1" class="code-input" data-index="4" style="background: var(--bg-color); color: var(--text-color); border: 2px solid var(--border-color); border-radius: 12px; width: 50px; height: 60px; font-size: 1.5rem;">
+                        <input type="text" maxlength="1" class="code-input" data-index="5" style="background: var(--bg-color); color: var(--text-color); border: 2px solid var(--border-color); border-radius: 12px; width: 50px; height: 60px; font-size: 1.5rem;">
                     </div>
 
                     <button type="button" class="btn-green" id="btn-verify-2fa"
-                        style="border-radius:20px; width: 100%; justify-content:center; margin-top:20px;">Verificar Código</button>
+                        style="border-radius:12px; width: 100%; justify-content:center; padding: 16px; font-size: 1.1rem; font-weight: bold;">Validar Código 2FA</button>
                     
                     <div style="margin-top:20px; font-size:0.85rem; color:#666;">
                         Não recebeu? <a href="#" onclick="fazerLogin()" style="color:var(--green-primary); text-decoration:none; font-weight:bold;">Reenviar código</a>
