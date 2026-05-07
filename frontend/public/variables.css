@@ -12,8 +12,21 @@
     --text-color: #333333;
     --text-white: #ffffff;
     --border-color: #e0e0e0;
+    --card-bg: #ffffff;
 }
 
+/* Modo Alto Contraste / Modo Escuro */
+body.high-contrast {
+    --green-primary: #4caf50; 
+    --green-dark: #2e7d32;
+    --green-light: #81c784;
+    --bg-color: #121212;
+    --sidebar-bg: #000000;
+    --text-color: #ffffff;
+    --text-white: #ffffff;
+    --border-color: #444444;
+    --card-bg: #1e1e1e;
+}
 * {
     box-sizing: border-box;
     margin: 0;

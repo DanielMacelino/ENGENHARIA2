@@ -65,7 +65,7 @@
 }
 
 .time-slot.available {
-    background-color: #ffffff;
+    background-color: var(--card-bg);
     color: #555;
 }
 

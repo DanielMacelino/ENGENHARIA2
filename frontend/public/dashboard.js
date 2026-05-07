@@ -1123,7 +1123,7 @@ export function verProntuario(textoJSON) {
         <div class="modal-content" style="max-width: 600px; text-align: left;">
             <h3 style="margin-bottom: 15px; color: var(--green-primary);"><i data-lucide="file-text" style="vertical-align: middle;"></i> Prontuário Eletrônico</h3>
             
-            <div class="prontuario-view" style="background:#f9f9f9; padding:15px; border-radius:8px; margin: 15px 0; border-left: 4px solid var(--green-primary); color:#333; line-height:1.6;">
+            <div class="prontuario-view">
                 <p><strong>Sintomas Relatados:</strong><br> ${dados.sintomas || 'N/A'}</p>
                 <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                 <p><strong>Diagnóstico / Avaliação:</strong><br> ${dados.diagnostico || 'N/A'}</p>

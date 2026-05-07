@@ -106,7 +106,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
-    background: #fff;
+    background: var(--card-bg);
     padding: 15px 20px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
