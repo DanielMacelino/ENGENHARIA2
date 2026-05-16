@@ -177,12 +177,29 @@
    TELA DE LOGIN
    ======================================================== */
 .login-body {
-    background-color: var(--bg-color);
     display: flex;
     align-items: center;
     justify-content: center;
     height: calc(100vh - 60px);
+    position: relative;
+    overflow: hidden;
 }
+
+.video-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    object-fit: cover;
+    filter: blur(4px) brightness(0.8); /* Menos desfoque e mais brilho */
+    pointer-events: none;
+}
+
+
+
+
 
 .login-card {
     background-color: white;

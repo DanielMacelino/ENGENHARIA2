@@ -84,8 +84,17 @@ export function inicializarInputsCodigo() {
             }
         });
         
+        // Tratar tecla Enter para confirmar
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const email = localStorage.getItem('temp_login_email');
+                if (email) verificarCodigo2FA(email);
+            }
+        });
+
         // Tratar evento de Colar (Paste)
         input.addEventListener('paste', (e) => {
+
             e.preventDefault();
             const pasteData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').substring(0, 6);
             if (pasteData) {
@@ -160,14 +169,14 @@ export function voltarParaLogin() {
     if (btn) { btn.innerText = "Entrar"; btn.disabled = false; }
 }
 /**
- * Recuperação de Senha via SMS (Requisito H)
+ * Recuperação de Senha via E-mail
  */
 export async function solicitarRecuperacao() {
-    const email = prompt("Informe seu e-mail para receber o código via SMS:");
+    const email = prompt("Informe seu e-mail para receber o código de recuperação:");
     if (!email) return;
 
-    showToast("Um código de segurança foi enviado para o seu celular cadastrado.");
-    const codigo = prompt("Digite o código recebido via SMS:");
+    showToast("Um código de segurança foi enviado para o seu e-mail cadastrado.");
+    const codigo = prompt("Digite o código recebido por E-mail:");
     
     if (codigo && codigo.length === 6) {
         const novaSenha = prompt("Digite sua nova senha:");
@@ -178,6 +187,7 @@ export async function solicitarRecuperacao() {
         showToast("Código inválido.");
     }
 }
+
 
 export async function realizarCadastro(event) {
     if (event) event.preventDefault();

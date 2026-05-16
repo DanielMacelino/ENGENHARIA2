@@ -49,7 +49,8 @@ export function renderSidebar() {
             <li><a href="/profissional/disponibilidade" class="${path === '/profissional/disponibilidade' ? 'active' : ''}"><i data-lucide="calendar-clock" style="width:18px;height:18px;"></i> Configurar Horários</a></li>
             <li><a href="/profissional/itens" class="${path === '/profissional/itens' || path === '/profissional/criar-item' ? 'active' : ''}"><i data-lucide="package" style="width:18px;height:18px;"></i> Inventário</a></li>
             <li><a href="/profissional/estatisticas" class="${path === '/profissional/estatisticas' ? 'active' : ''}"><i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i> Estatísticas Gerais</a></li>
-            <li><a href="/profissional/logs" class="${path === '/profissional/logs' ? 'active' : ''}"><i data-lucide="file-text" style="width:18px;height:18px;"></i> Logs do Sistema</a></li>
+            <li><a href="/profissional/logs" class="${path === '/profissional/logs' ? 'active' : ''}"><i data-lucide="history" style="width:18px;height:18px;"></i> Histórico do Sistema</a></li>
+
         `;
     }
 
@@ -221,9 +222,10 @@ export function renderizarTabelaProfissional(pacientes) {
                     <button onclick="mudarStatus('${p.id}', 'Cancelado')" style="background:none; border:none; cursor:pointer; color:red;" title="Recusar">❌</button>
                 ` : `
                     <div style="display:flex; gap:5px; justify-content:center;">
-                        <button onclick="verProntuario('${p.observacoes || ''}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem;" title="Ver Prontuário">👁️ Ver</button>
+                        <button onclick="verProntuario('${p.id}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem;" title="Ver Prontuário">👁️ Ver</button>
                         <button onclick="exportarPDF('receita', '${p.id}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem; background:var(--green-dark);" title="Baixar Receita">💊 Receita</button>
                     </div>
+
                 `}
             </td>
         `;
@@ -578,8 +580,9 @@ export function renderizarTabelaAluno(agendamentos) {
                 ${a.status === 'Pendente' ? `<button onclick="mudarStatus('${a.id}', 'Cancelado')" style="border:none; background:transparent; cursor:pointer; color: red;" title="Cancelar">❌</button>` : ''}
                 ${a.status === 'Atendido' ? `
                     <div style="display:flex; gap:5px; justify-content:center;">
-                        <button onclick="verProntuario('${a.observacoes || ''}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem;" title="Ver Resumo">👁️ Ver</button>
+                        <button onclick="verProntuario('${a.id}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem;" title="Ver Resumo">👁️ Ver</button>
                         <button onclick="exportarPDF('atestado', '${a.id}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem; background:var(--green-dark);" title="Baixar Atestado">📄 Atestado</button>
+
                         <button onclick="exportarPDF('receita', '${a.id}')" class="btn-green" style="padding:4px 8px; font-size:0.8rem; background:#3498db;" title="Baixar Receita Médica">💊 Receita</button>
                     </div>
                 ` : ''}
@@ -1108,13 +1111,17 @@ export async function salvarAtendimento(id) {
     }
 }
 
-export function verProntuario(textoJSON) {
+export function verProntuario(id) {
+    const agendamento = originalAgendamentos.find(a => a.id == id);
+    let textoJSON = agendamento ? agendamento.observacoes : '';
+    
     let dados = { sintomas: 'N/A', diagnostico: 'N/A', prescricao: 'N/A' };
     try {
         dados = JSON.parse(textoJSON);
     } catch (e) {
-        dados.prescricao = textoJSON; // Retrocompatibilidade
+        dados.prescricao = textoJSON || 'N/A'; // Retrocompatibilidade
     }
+
 
     const modal = document.createElement('div');
     modal.id = 'modal-prontuario';

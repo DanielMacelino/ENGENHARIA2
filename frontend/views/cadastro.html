@@ -9,17 +9,37 @@
     <link rel="stylesheet" href="/public/variables.css?v=2">
     <link rel="stylesheet" href="/public/layout.css?v=2">
     <link rel="stylesheet" href="/public/components.css?v=2">
-    <link rel="stylesheet" href="/public/pages.css?v=2">
+    <link rel="stylesheet" href="/public/pages.css?v=4">
+
     <link rel="icon" href="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/imagesifceredondo.JPG" type="image/x-icon">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Otimizações de Carregamento -->
+    <link rel="preload" href="/public/poster.png" as="image">
+    <link rel="preload" href="/public/IFCEVIDEO.mp4" as="video">
+    
+    <style>
+        /* CSS Crítico */
+        .video-background { background: #000 url('/public/poster.png') no-repeat center center; background-size: cover; }
+        .login-card { opacity: 0; transform: translateY(20px); transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        body.loaded .login-card { opacity: 1; transform: translateY(0); }
+    </style>
 </head>
 
-<body>
 
-    <header class="top-header">
+<body style="margin: 0; padding: 0; overflow: hidden; background: transparent;">
+
+
+    <video autoplay muted loop playsinline poster="/public/poster.png" id="bg-video" class="video-background">
+        <source src="/public/IFCEVIDEO.mp4" type="video/mp4">
+    </video>
+
+
+
+    <header class="top-header" style="background: rgba(14, 53, 27, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1);">
         <div class="header-left">
             <div class="logo-header">
-                <img src="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/images-removebg-preview%20(1).png" alt="Logo IFCE">
+                <div style="background: white; border-radius: 12px; padding: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
+                    <img src="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/images-removebg-preview%20(1).png" alt="Logo IFCE" style="height: 35px; width: auto; border-radius: 4px;">
+                </div>
             </div>
             <div class="header-titles">
                 <h1>Sistema de Agendamento - Posto de Saúde</h1>
@@ -27,12 +47,16 @@
             </div>
         </div>
         <div>
-            <a href="/" style="color: white; font-size: 0.9rem; text-decoration: none; font-weight: bold;">Já tenho conta? Entrar</a>
+            <a href="/" style="color: white; font-size: 0.9rem; text-decoration: none; font-weight: bold; background: var(--green-primary); padding: 8px 20px; border-radius: 20px;">Entrar</a>
         </div>
     </header>
 
-    <div class="login-body">
-        <div class="login-card" style="max-width: 450px;">
+
+    <div class="login-body" style="background: transparent;">
+
+
+        <div class="login-card" style="max-width: 450px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+
             <div class="login-logo">
                 <span style="color:var(--green-primary); font-size: 1.8rem;">Crie sua Conta</span>
             </div>
@@ -69,7 +93,18 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var video = document.getElementById('bg-video');
+            if (video) {
+                video.play().catch(function(error) {
+                    console.log("Autoplay preventido ou erro no vídeo:", error);
+                });
+            }
+        });
+    </script>
     <script type="module" src="/public/main.js?v=3"></script>
+
 </body>
 
 </html>

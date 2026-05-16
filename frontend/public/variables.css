@@ -27,12 +27,15 @@ body.high-contrast {
     --border-color: #444444;
     --card-bg: #1e1e1e;
 }
+
 * {
+
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
+
 
 body {
     background-color: var(--bg-color);

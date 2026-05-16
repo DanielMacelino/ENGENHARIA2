@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logs de Sistema - IFCE</title>
+    <title>Histórico do Sistema - IFCE</title>
+
     <!-- Inclui o arquivo de configuração e estilos -->
     <script src="/config.js"></script>
     <link rel="stylesheet" href="/public/variables.css?v=2">
@@ -42,10 +43,11 @@
         <main class="content-area">
 
             <div class="page-title">
-                Logs de Acesso e Ações
-                <span class="badge active" style="font-size: 0.8rem; padding: 5px 15px;">Módulo de Logs</span>
+                Histórico de Acessos e Ações
+                <span class="badge active" style="font-size: 0.8rem; padding: 5px 15px;">Módulo de Histórico</span>
             </div>
-            <p class="page-subtitle">Acompanhamento e auditoria do sistema em tempo real.</p>
+            <p class="page-subtitle">Auditoria completa das movimentações realizadas no sistema.</p>
+
 
             <div class="card">
             <div class="filter-bar">
@@ -58,7 +60,8 @@
                     <input type="text" id="filtro-acao" class="filter-input" placeholder="Pesquisar ação..." style="width: 100%;">
                 </div>
                 <button onclick="filtrarLogs()" class="btn-filter">&#x1f50d; Filtrar</button>
-                <button onclick="limparFiltros('logs')" class="btn-clear">Limpar</button>
+                <button onclick="limparFiltros('logs')" class="btn-clear">Limpar Filtros</button>
+
             </div>
 
                 <div class="table-responsive" style="margin-top: 20px;">
@@ -73,8 +76,9 @@
                         </thead>
                         <tbody id="tabela-logs">
                             <tr>
-                                <td colspan="4">Carregando logs da API...</td>
+                                <td colspan="4">Carregando histórico do servidor...</td>
                             </tr>
+
                         </tbody>
                     </table>
                 </div>
