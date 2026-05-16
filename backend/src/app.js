@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import https from "https";
 import router from "./routes/userRoutes.js";
 import { seedDatabase } from "./seedLogic.js";
 import { executarBackupNuvem } from "./services/backupService.js";
@@ -37,13 +38,44 @@ app.use("/uploads", express.static(uploads));
 // Health check para Vercel
 app.get("/api/health", (req, res) => res.json({ status: "ok", time: new Date() }));
 
+// Proxy Profissional de Thumbnails (Bypass de Bloqueios)
+app.get("/api/thumbnail-proxy", (req, res) => {
+    const { videoId } = req.query;
+    if (!videoId) return res.status(400).send("Video ID missing");
+    
+    console.log(`[PROXY] Buscando thumbnail para: ${videoId}`);
+    const url = `https://img.youtube.com/vi/${videoId}/0.jpg`; // 0.jpg é o mais compatível
+    
+    https.get(url, (ytRes) => {
+        if (ytRes.statusCode !== 200) {
+            console.error(`[PROXY] Erro YouTube (${ytRes.statusCode}) para: ${videoId}`);
+            return res.redirect("https://images.unsplash.com/photo-1505751172676-53ad2cb65709?auto=format&fit=crop&q=80&w=400");
+        }
+        
+        res.setHeader("Content-Type", "image/jpeg");
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        ytRes.pipe(res);
+    }).on('error', (e) => {
+        console.error(`[PROXY] Erro de conexão para: ${videoId}`, e.message);
+        res.redirect("https://images.unsplash.com/photo-1505751172676-53ad2cb65709?auto=format&fit=crop&q=80&w=400");
+    });
+});
+
+
+
+
 // Rota de Configuração (Envia chaves públicas para o Frontend usar Realtime)
 app.get("/api/config", (req, res) => {
+    console.log("[DEBUG] Carregando config Supabase:", { 
+        hasUrl: !!process.env.SUPABASE_URL, 
+        hasKey: !!process.env.SUPABASE_KEY 
+    });
     res.json({
         supabaseUrl: process.env.SUPABASE_URL,
         supabaseAnonKey: process.env.SUPABASE_KEY
     });
 });
+
 
 // Rota de Seed
 app.get("/api/seed", async (req, res) => {
@@ -98,5 +130,7 @@ app.get("/profissional/informacoes", (req, res) => res.sendFile(path.join(views,
 app.get("/profissional/mapa", (req, res) => res.sendFile(path.join(views, "mapa.html")));
 app.get("/profissional/logs", (req, res) => res.sendFile(path.join(views, "logs.html")));
 app.get("/profissional/estatisticas", (req, res) => res.sendFile(path.join(views, "estatisticas.html")));
+app.get("/tutoriais", (req, res) => res.sendFile(path.join(views, "tutoriais.html")));
+
 
 export default app;

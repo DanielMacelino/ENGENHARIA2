@@ -5,8 +5,9 @@ import { upload } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
-// router.use(logRequest);
+router.use(logRequest);
 // router.use(workingDaysOnly);
+
 
 router.post("/login", Controller.login);
 router.post("/cadastro", Controller.registrarUsuario);
@@ -31,5 +32,7 @@ router.get("/estatisticas", Controller.getEstatisticasGerais);
 router.post("/login/verify", Controller.verificar2FA);
 router.post("/upload", upload.single("imagem"), Controller.uploadImagem);
 router.post("/distancia", Controller.calcularDistancia);
+router.get("/relatorio-monitoramento", Controller.relatorioMonitoramento);
+
 
 export default router;

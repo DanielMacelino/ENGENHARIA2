@@ -35,12 +35,34 @@ const verifyPassword = (password, storedPassword) => {
 
 const logsRequisicoes = [];
 
-export const registrarLog = (metodo, rota) => {
-    const agora = new Date();
-    const data = agora.toISOString().split("T")[0];
-    const hora = agora.toLocaleTimeString();
-    logsRequisicoes.push({ metodo, rota, data, hora });
+export const registrarLog = async (metodo, rota, usuario_nome = "Sistema") => {
+    try {
+        const agora = new Date();
+        const data = agora.toISOString().split("T")[0];
+        // Ignorar logs de arquivos estáticos e do próprio log para não poluir
+        if (rota.includes('.') || rota.includes('/api/logs')) return;
+
+        await supabase.from("logs").insert([{
+            acao: `${metodo} ${rota}`,
+            detalhes: `Acesso à rota via sistema`,
+            usuario_nome: usuario_nome,
+            data: data
+        }]).then(({ error }) => {
+            if (error && error.message.includes('column "acao"')) {
+                // Fallback se a coluna 'acao' não existir (usa apenas detalhes)
+                return supabase.from("logs").insert([{
+                    detalhes: `${metodo} ${rota} - Acesso via Browser`,
+                    usuario_nome: usuario_nome,
+                    data: data
+                }]);
+            }
+        });
+
+    } catch (e) {
+        // Silencioso para não travar a requisição principal
+    }
 };
+
 
 // =====================================================
 // REGISTRAR USUÁRIO - Novo Cadastro (Requisito F)
@@ -1028,5 +1050,100 @@ export const getEstatisticasGerais = async (req, res) => {
     } catch (err) {
         console.error("Erro fatal ao buscar estatísticas:", err);
         return res.status(500).json({ error: "Erro ao carregar estatísticas.", details: err.message });
+    }
+};
+
+// =====================================================
+// RELATÓRIO DE MONITORAMENTO - PDF com métricas de acesso
+// =====================================================
+export const relatorioMonitoramento = async (req, res) => {
+    try {
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        
+        // 1. Buscar logs do mês atual - Usamos select("*") para evitar erro de coluna inexistente
+        const { data: logs, error } = await supabase
+            .from("logs")
+            .select("*")
+            .gte("created_at", `${currentMonth}-01T00:00:00Z`);
+
+        if (error) throw error;
+
+        // 2. Análise de Rotas (Frequência)
+        const rotasCount = {};
+        logs.forEach(log => {
+            // Tenta 'acao', senão busca 'metodo' e 'rota' ou fallback
+            let rota = log.acao || (log.metodo ? `${log.metodo} ${log.rota}` : null) || "Rota não identificada";
+            rotasCount[rota] = (rotasCount[rota] || 0) + 1;
+        });
+
+        // 3. Análise de Horário de Pico
+        const horasCount = new Array(24).fill(0);
+        logs.forEach(log => {
+            const dataLog = log.created_at || log.data;
+            if (dataLog) {
+                const hora = new Date(dataLog).getUTCHours();
+                horasCount[hora]++;
+            }
+        });
+
+
+        const picoHora = horasCount.indexOf(Math.max(...horasCount));
+        const totalAcessos = logs.length;
+
+        // 4. Gerar PDF
+        const doc = new PDFDocument({ margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=relatorio_monitoramento.pdf');
+        doc.pipe(res);
+
+        const greenPrimary = '#1e6d38';
+
+        // Cabeçalho
+        doc.rect(0, 0, 612, 80).fill(greenPrimary);
+        doc.fillColor('#ffffff').fontSize(18).text("RELATÓRIO DE MONITORAMENTO DE ACESSOS", 50, 30);
+        doc.fontSize(10).text(`Mês de Referência: ${currentMonth} | Total de Requisições: ${totalAcessos}`, 50, 55);
+
+        doc.moveDown(4);
+        doc.fillColor('#333333');
+
+        // Seção: Horário de Pico
+        doc.fontSize(14).fillColor(greenPrimary).text("Análise de Pico de Uso", 50, 100);
+        doc.moveDown(0.5);
+        doc.fontSize(11).fillColor('#333').text(`O horário com maior volume de acessos no sistema é às ${picoHora}:00h.`);
+        doc.moveDown(2);
+
+        // Seção: Tabela de Rotas
+        doc.fontSize(14).fillColor(greenPrimary).text("Frequência de Acesso por Rota", 50, 150);
+        doc.moveDown(1);
+
+        // Cabeçalho Tabela
+        doc.fontSize(10).fillColor('#666');
+        doc.text("MÉTODO / ROTA", 50, 170);
+        doc.text("TOTAL DE ACESSOS", 450, 170, { align: 'right', width: 100 });
+        doc.strokeColor('#eee').moveTo(50, 185).lineTo(550, 185).stroke();
+
+        let y = 195;
+        Object.entries(rotasCount)
+            .sort((a, b) => b[1] - a[1]) // Mais acessados primeiro
+            .slice(0, 25) // Top 25
+            .forEach(([rota, count], index) => {
+                if (index % 2 === 0) doc.rect(50, y - 5, 500, 20).fill('#f9f9f9');
+                
+                doc.fillColor('#333').fontSize(9);
+                doc.text(rota, 60, y);
+                doc.text(count.toString(), 450, y, { align: 'right', width: 100 });
+                
+                y += 20;
+                if (y > 700) {
+                    doc.addPage();
+                    y = 50;
+                }
+            });
+
+        doc.end();
+
+    } catch (err) {
+        console.error("Erro no relatório de monitoramento:", err);
+        res.status(500).json({ error: "Erro ao gerar relatório." });
     }
 };

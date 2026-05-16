@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IFCE Saúde Play - Streaming Educativo</title>
+    
+    <!-- Design System -->
+    <link rel="stylesheet" href="/public/variables.css">
+    <link rel="stylesheet" href="/public/layout.css">
+    <link rel="stylesheet" href="/public/components.css">
+    
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Plyr Player (Professional UI) -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --card-bg: #1a1a1a;
+            --accent: #32a041; /* Verde IFCE */
+            --accent-glow: rgba(50, 160, 65, 0.4);
+            --text-main: #ffffff;
+            --text-dim: #b3b3b3;
+        }
+
+        body {
+            background-color: var(--bg-dark) !important;
+            color: var(--text-main);
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .main-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .content-area {
+            flex: 1;
+            margin-left: 260px; /* Largura da sidebar */
+            padding: 0 !important;
+            background-color: var(--bg-dark);
+        }
+
+        /* Hero Banner Premium */
+        .hero {
+            position: relative;
+            height: 65vh;
+            display: flex;
+            align-items: center;
+            padding: 0 8%;
+            margin-bottom: 20px;
+            background-size: cover;
+            background-position: center 20%;
+            background-image: linear-gradient(to right, rgba(10,10,10,1) 15%, rgba(10,10,10,0.2) 60%, transparent 100%),
+                              url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2070');
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .hero-content {
+            max-width: 650px;
+            z-index: 10;
+        }
+
+        .hero-tag {
+            color: #4ade80;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin: 0 0 15px 0;
+            line-height: 1.1;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .btn-play {
+            background: white;
+            color: black;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-play:hover {
+            background: rgba(255,255,255,0.8);
+            transform: scale(1.05);
+        }
+
+        /* Grid de Vídeos */
+        .video-container {
+            padding: 40px 5%;
+        }
+
+        .section-row {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .video-card:hover {
+            transform: scale(1.08);
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .thumbnail-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        }
+
+        .thumbnail-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .card-body h3 {
+            margin: 0 0 5px 0;
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-body p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        /* Modal Player */
+        #modal-player {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-inner {
+            width: 90%;
+            max-width: 1100px;
+            aspect-ratio: 16/9;
+            background: black;
+            position: relative;
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(229, 9, 20, 0.3);
+        }
+
+        .btn-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            color: white;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 12px;
+        }
+
+        /* Custom Player Styling */
+        .plyr {
+            --plyr-color-main: var(--accent); /* Cor do tema */
+            border-radius: 12px;
+        }
+
+        .plyr--full-ui input[type=range] {
+            color: var(--accent);
+        }
+
+        .plyr__control--overlaid {
+            background: rgba(50, 160, 65, 0.9);
+        }
+
+        .plyr--video .plyr__controls {
+            background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.7)) !important;
+            padding-top: 40px !important;
+        }
+
+        .plyr__video-embed iframe {
+            transform: scale(1.01); /* Esconde bordas do YouTube */
+        }
+
+        @media (max-width: 992px) {
+            .content-area { margin-left: 0; }
+            .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <!-- Sidebar Dinâmica -->
+        <aside id="sidebar-container" class="sidebar"></aside>
+
+        <main class="content-area">
+            <!-- Destaque -->
+            <section class="hero" id="hero-banner">
+                <div class="hero-content">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <span class="hero-tag" style="margin-bottom: 0;">IFCE Saúde Play</span>
+                        <span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;">OFICIAL</span>
+                    </div>
+                    <h1 id="hero-title">Instituto Federal do Ceará</h1>
+                    <p id="hero-desc" style="font-size: 1.2rem; border-left: 4px solid var(--accent); padding-left: 20px;">
+                        Portal de streaming educativo e saúde preventiva da comunidade acadêmica do IFCE.
+                    </p>
+                    <button class="btn-play" onclick="playCurrentHero()" style="background: var(--accent); color: white;">
+                        <i data-lucide="play-circle"></i> Começar a Assistir
+                    </button>
+                </div>
+            </section>
+
+            <!-- Trilhas de Vídeos -->
+            <div class="video-container" id="video-sections">
+                <!-- Injetado via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal do Player -->
+    <div id="modal-player">
+        <div class="modal-inner">
+            <button class="btn-close" onclick="closePlayer()">&times;</button>
+            <div id="player-target" style="width:100%; height:100%;"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="/public/main.js"></script>
+    <script>
+        // CONFIGURAÇÃO DOS VÍDEOS (LISTA DO USUÁRIO)
+        const VIDEOS_DATA = [
+            {
+                category: "Saúde e Prevenção",
+                items: [
+                    { id: "9q7WaQqtWK4", title: "Entendendo sua Saúde", channel: "Drauzio Varella" },
+                    { id: "morvFgMIqaA", title: "Dicas de Bem-Estar", channel: "Ministério da Saúde" },
+                    { id: "D_B4mtew_zs", title: "Cuidado Diário", channel: "Albert Einstein" },
+                    { id: "t354E2Ot9eA", title: "Saúde Mental", channel: "Vittude" },
+                    { id: "t9uNgDtT6pE", title: "Nutrição e Vida", channel: "Tua Saúde" }
+                ]
+            },
+            {
+                category: "Vida Saudável e Exercícios",
+                items: [
+                    { id: "YJaEz2qBveY", title: "Rotina Fitness", channel: "Smart Fit" },
+                    { id: "Ul0JSOfNEu4", title: "Performance e Foco", channel: "Leandro Twin" },
+                    { id: "TDvRSqxkxVI", title: "Educação em Saúde", channel: "Canal Saúde" },
+                    { id: "jZGHGL2m0mQ", title: "Medicina do Futuro", channel: "TED Health" }
+                ]
+            }
+        ];
+
+
+        // Backup de Imagens caso o YouTube falhe
+        const FALLBACK_IMAGES = [
+            "https://images.unsplash.com/photo-1505751172676-53ad2cb65709?auto=format&fit=crop&q=80&w=400",
+            "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=400",
+            "https://images.unsplash.com/photo-1527137342181-19aab11a8ee1?auto=format&fit=crop&q=80&w=400"
+        ];
+
+        function renderVideos() {
+            const container = document.getElementById('video-sections');
+            let html = '';
+
+            VIDEOS_DATA.forEach(section => {
+                html += `
+                    <div class="section-row">
+                        <h2 class="section-title">${section.category}</h2>
+                        <div class="video-grid">
+                            ${section.items.map(v => `
+                                <div class="video-card" onclick="openPlayer('${v.id}')">
+                                    <div class="thumbnail-wrapper">
+                                        <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" 
+                                             onerror="handleImgError(this)" 
+                                             alt="${v.title}">
+                                        <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent);">
+                                            <i data-lucide="check-circle-2" style="width: 14px; height: 14px; color: var(--accent);"></i>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <h3>${v.title}</h3>
+                                        <p style="display: flex; align-items: center; gap: 5px;">
+                                            <span style="color: var(--accent); font-weight: 700;">●</span> ${v.channel}
+                                        </p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function handleImgError(img) {
+            // Se a imagem do YouTube falhar, pega uma aleatória do Unsplash
+            const randomImg = FALLBACK_IMAGES[Math.floor(Math.random() * FALLBACK_IMAGES.length)];
+            img.src = randomImg;
+            img.onerror = null; // Evita loop infinito
+        }
+
+        function openPlayer(videoId) {
+            const modal = document.getElementById('modal-player');
+            const target = document.getElementById('player-target');
+            
+            modal.style.display = 'flex';
+
+            // Criar estrutura para o Plyr
+            target.innerHTML = `
+                <div class="plyr__video-embed" id="player">
+                    <iframe 
+                        src="https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1" 
+                        allowfullscreen 
+                        allowtransparency 
+                        allow="autoplay">
+                    </iframe>
+                </div>
+            `;
+
+            // Inicializar Plyr
+            playerInstance = new Plyr('#player', {
+                controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+                settings: ['quality', 'speed'],
+                tooltips: { controls: true, seek: true }
+            });
+        }
+
+        function closePlayer() {
+            const modal = document.getElementById('modal-player');
+            const target = document.getElementById('player-target');
+            
+            if (playerInstance) {
+                playerInstance.destroy();
+            }
+            
+            target.innerHTML = '';
+            modal.style.display = 'none';
+        }
+
+        function playCurrentHero() {
+            openPlayer('NtopoEIUEQU');
+        }
+
+        // Inicialização
+        window.onload = () => {
+            renderVideos();
+            if (window.lucide) lucide.createIcons();
+        };
+    </script>
+</body>
+</html>

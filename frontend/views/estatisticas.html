@@ -42,9 +42,15 @@
                     <div class="page-title">Painel de Indicadores</div>
                     <p class="page-subtitle">Visão geral de atendimentos, usuários e recursos financeiros.</p>
                 </div>
-                <button onclick="exportarEstatisticasCSV()" class="btn-green" style="background-color: #2c3e50; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="download" style="width: 18px; height: 18px;"></i> Exportar Relatório (CSV)
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="window.location.href='/api/relatorio-monitoramento'" class="btn-green" style="background-color: #1e6d38; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="activity" style="width: 18px; height: 18px;"></i> Relatório de Monitoramento (PDF)
+                    </button>
+                    <button onclick="exportarEstatisticasCSV()" class="btn-green" style="background-color: #2c3e50; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="download" style="width: 18px; height: 18px;"></i> Exportar Relatório (CSV)
+                    </button>
+                </div>
+
             </div>
 
 

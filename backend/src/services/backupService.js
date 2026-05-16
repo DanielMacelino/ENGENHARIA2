@@ -1,4 +1,5 @@
-import { supabase } from '../supabaseClient.js';
+import { supabase } from '../../supabaseClient.js';
+
 
 /**
  * Converte um array de objetos para CSV
