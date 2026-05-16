@@ -3,49 +3,49 @@ import { API_URL, showToast } from './utils.js';
 
 let supabaseClient = null;
 
+/**
+ * Inicializa a conexão profissional via WebSockets do Supabase
+ * Retorna o cliente para ser usado em módulos específicos (Chat, Mural, Agendamentos)
+ */
 export async function initRealtime(onAgendamentoChange) {
-    if (supabaseClient) return; // Já inicializado
+    if (supabaseClient) return supabaseClient;
 
     try {
-        // Busca as chaves públicas da API do nosso servidor
         const response = await fetch(`${API_URL}/config`);
         const config = await response.json();
 
         if (!config.supabaseUrl || !config.supabaseAnonKey) {
-            console.error("Configuração do Supabase ausente.");
-            return;
+            console.error("[REALTIME] Configuração incompleta.");
+            return null;
         }
 
         supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey);
 
-        // Inscreve no canal do realtime para a tabela 'agendamentos'
-        const channel = supabaseClient
-            .channel('custom-all-channel')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'agendamentos' },
-                (payload) => {
-                    console.log('Realtime Event:', payload);
-                    
-                    // Exibir aviso dependendo do evento
-                    if (payload.eventType === 'INSERT') {
-                        showToast("Novo agendamento recebido!", "info");
-                    } else if (payload.eventType === 'UPDATE') {
-                        showToast("Status de agendamento atualizado.", "info");
-                    } else if (payload.eventType === 'DELETE') {
-                        showToast("Um agendamento foi removido.", "warning");
+        // Inscrição padrão para notificações globais de agendamentos
+        if (onAgendamentoChange) {
+            supabaseClient
+                .channel('global-changes')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'agendamentos' },
+                    (payload) => {
+                        handleGlobalToast(payload);
+                        if (typeof onAgendamentoChange === 'function') onAgendamentoChange(payload);
                     }
+                )
+                .subscribe();
+        }
 
-                    // Chama a callback para atualizar a tabela na tela
-                    if (typeof onAgendamentoChange === 'function') {
-                        onAgendamentoChange(payload);
-                    }
-                }
-            )
-            .subscribe();
-
-        console.log("Supabase Realtime iniciado com sucesso.");
+        console.log("[REALTIME] Conexão Socket estabelecida.");
+        return supabaseClient;
     } catch (err) {
-        console.error("Erro ao iniciar Supabase Realtime:", err);
+        console.error("[REALTIME] Erro crítico na conexão:", err);
+        return null;
     }
+}
+
+function handleGlobalToast(payload) {
+    if (payload.eventType === 'INSERT') showToast("Novo agendamento recebido!", "info");
+    else if (payload.eventType === 'UPDATE') showToast("Status de agendamento atualizado.", "info");
+    else if (payload.eventType === 'DELETE') showToast("Um agendamento foi removido.", "warning");
 }

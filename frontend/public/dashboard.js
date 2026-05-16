@@ -42,7 +42,8 @@ export function renderSidebar() {
             <li><a href="/aluno/dashboard" class="${path === '/aluno/dashboard' ? 'active' : ''}"><i data-lucide="home" style="width:18px;height:18px;"></i> Home / Início</a></li>
             <li><a href="/aluno/novo-agendamento" class="${path === '/aluno/novo-agendamento' ? 'active' : ''}"><i data-lucide="plus-circle" style="width:18px;height:18px;color:var(--green-primary);"></i> Agendar Consulta</a></li>
             <li><a href="/aluno/agendamentos" class="${path === '/aluno/agendamentos' ? 'active' : ''}"><i data-lucide="calendar" style="width:18px;height:18px;"></i> Meus Agendamentos</a></li>
-            <li><a href="/tutoriais" class="${path === '/tutoriais' ? 'active' : ''}"><i data-lucide="play-circle" style="width:18px;height:18px;color:#e50914;"></i> IFCE Saúde Play</a></li>
+            <li><a href="/tutoriais" class="${path === '/tutoriais' ? 'active' : ''}"><i data-lucide="play-circle" style="width:18px;height:18px;color:var(--accent);"></i> IFCE Saúde Play</a></li>
+            <li><a href="/comunicacao" class="${path === '/comunicacao' ? 'active' : ''}"><i data-lucide="message-square" style="width:18px;height:18px;color:var(--accent);"></i> Mural da Equipe <span class="badge-new">SOCKET</span></a></li>
             <li><a href="/aluno/mapa" class="${path === '/aluno/mapa' ? 'active' : ''}"><i data-lucide="map-pin" style="width:18px;height:18px;"></i> Mapa e Distância</a></li>
 
             <li><a href="/aluno/informacoes" class="${path === '/aluno/informacoes' ? 'active' : ''}"><i data-lucide="book" style="width:18px;height:18px;"></i> Informações Acadêmicas</a></li>
@@ -53,7 +54,8 @@ export function renderSidebar() {
             <li><a href="/profissional/disponibilidade" class="${path === '/profissional/disponibilidade' ? 'active' : ''}"><i data-lucide="calendar-clock" style="width:18px;height:18px;"></i> Configurar Horários</a></li>
             <li><a href="/profissional/itens" class="${path === '/profissional/itens' || path === '/profissional/criar-item' ? 'active' : ''}"><i data-lucide="package" style="width:18px;height:18px;"></i> Inventário</a></li>
             <li><a href="/profissional/estatisticas" class="${path === '/profissional/estatisticas' ? 'active' : ''}"><i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i> Estatísticas Gerais</a></li>
-            <li><a href="/tutoriais" class="${path === '/tutoriais' ? 'active' : ''}"><i data-lucide="play-circle" style="width:18px;height:18px;color:#e50914;"></i> IFCE Saúde Play</a></li>
+            <li><a href="/tutoriais" class="${path === '/tutoriais' ? 'active' : ''}"><i data-lucide="play-circle" style="width:18px;height:18px;color:var(--accent);"></i> IFCE Saúde Play</a></li>
+            <li><a href="/comunicacao" class="${path === '/comunicacao' ? 'active' : ''}"><i data-lucide="message-square" style="width:18px;height:18px;color:var(--accent);"></i> Mural da Equipe <span class="badge-new">SOCKET</span></a></li>
             <li><a href="/profissional/logs" class="${path === '/profissional/logs' ? 'active' : ''}"><i data-lucide="history" style="width:18px;height:18px;"></i> Histórico do Sistema</a></li>
 
 

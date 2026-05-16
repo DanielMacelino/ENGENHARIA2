@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mural de Avisos - IFCE Saúde</title>
+    
+    <link rel="stylesheet" href="/public/variables.css">
+    <link rel="stylesheet" href="/public/layout.css">
+    <link rel="stylesheet" href="/public/components.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        .mural-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 100px);
+        }
+
+        .chat-section {
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .messages-list {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f1f5f9;
+        }
+
+        /* ESTILO DOS BALÕES CORRIGIDO */
+        .message-card {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 18px 18px 18px 4px;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            position: relative;
+            animation: slideUp 0.3s ease;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            align-self: flex-start;
+        }
+
+        .message-card.my-message {
+            align-self: flex-end;
+            background: var(--accent); /* VERDE IFCE */
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+            border: none;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .message-card.my-message .message-meta span {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .message-meta {
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .presence-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .user-online {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        .user-avatar {
+            width: 35px; height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <div class="main-wrapper">
+        <aside id="sidebar-container" class="sidebar"></aside>
+
+        <main class="content-area">
+            <header class="page-header" style="padding: 20px;">
+                <div>
+                    <h1 class="text-2xl font-bold text-dark">Mural de Avisos da Equipe</h1>
+                    <p class="text-muted">Comunicação em tempo real com persistência de dados.</p>
+                </div>
+            </header>
+
+            <div class="mural-container">
+                <section class="chat-section">
+                    <div class="chat-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="message-square" class="text-primary"></i>
+                            <span class="font-semibold">Mensagens Recentes</span>
+                        </div>
+                    </div>
+
+                    <div class="messages-list" id="messages-list">
+                        <div class="text-center text-muted py-10" id="loading-chat">
+                            Carregando histórico seguro...
+                        </div>
+                    </div>
+
+                    <form class="chat-input-area" id="chat-form">
+                        <input type="text" class="chat-input" id="chat-msg" placeholder="Digite um aviso importante..." required>
+                        <button type="submit" class="btn btn-primary" id="btn-send">
+                            <i data-lucide="send"></i>
+                        </button>
+                    </form>
+                </section>
+
+                <aside class="presence-section">
+                    <h3 class="text-sm font-bold text-dark mb-4 uppercase tracking-wider">Online Agora</h3>
+                    <div id="presence-list"></div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initRealtime } from '/public/realtime.js';
+
+        let supabase;
+        let channel;
+        const messagesList = document.getElementById('messages-list');
+        const chatForm = document.getElementById('chat-form');
+        const presenceList = document.getElementById('presence-list');
+        
+        const userId = localStorage.getItem('usuario_id');
+        const userNome = localStorage.getItem('usuario_nome');
+        const userFoto = localStorage.getItem('usuario_foto');
+        const userTipo = localStorage.getItem('tipo_usuario');
+
+        if (!userId) {
+            window.location.href = '/login';
+        }
+
+        async function start() {
+            const client = await initRealtime();
+            if (!client) return;
+            supabase = client;
+
+            // 1. Carregar Histórico Inicial
+            await fetchMessages();
+
+            // 2. Configurar Canal Realtime
+            channel = supabase.channel('mural_ifce', {
+                config: {
+                    broadcast: { self: false }, // Não receber o próprio broadcast para não duplicar
+                    presence: { key: userId }
+                }
+            });
+
+            // 3. Ouvir novas mensagens via Socket
+            channel.on('broadcast', { event: 'new_message' }, ({ payload }) => {
+                renderMessage(payload);
+            });
+
+            // 4. Gerenciar Presença
+            channel.on('presence', { event: 'sync' }, () => {
+                renderPresence(channel.presenceState());
+            });
+
+            channel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await channel.track({
+                        nome: userNome,
+                        foto: userFoto,
+                        tipo: userTipo
+                    });
+                }
+            });
+        }
+
+        async function fetchMessages() {
+            try {
+                const res = await fetch('/api/mural');
+                const mensagens = await res.json();
+                document.getElementById('loading-chat').style.display = 'none';
+                
+                messagesList.innerHTML = ''; // Limpa o "Carregando"
+                
+                mensagens.forEach(m => {
+                    renderMessage({
+                        user_id: m.usuario_id,
+                        nome: m.nome,
+                        texto: m.texto,
+                        created_at: m.created_at
+                    });
+                });
+            } catch (error) {
+                console.error("Erro ao carregar histórico:", error);
+            }
+        }
+
+        function renderMessage(data) {
+            const isMe = String(data.user_id) === String(userId);
+            const card = document.createElement('div');
+            card.className = `message-card ${isMe ? 'my-message' : ''}`;
+            
+            const hora = data.created_at ? new Date(data.created_at) : new Date();
+            
+            card.innerHTML = `
+                <div class="message-meta">
+                    <span>${data.nome}</span>
+                    <span>${hora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                </div>
+                <div class="message-text">${data.texto}</div>
+            `;
+            
+            messagesList.appendChild(card);
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        function renderPresence(state) {
+            presenceList.innerHTML = '';
+            const onlineUsers = Object.values(state).flat();
+            onlineUsers.forEach(u => {
+                const item = document.createElement('div');
+                item.className = 'user-online';
+                item.innerHTML = `
+                    <div class="status-dot"></div>
+                    <img src="${u.foto || 'https://ui-avatars.com/api/?name='+u.nome}" class="user-avatar">
+                    <div style="flex: 1">
+                        <div class="text-sm font-semibold">${u.nome}</div>
+                        <div class="text-xs text-muted">${u.tipo}</div>
+                    </div>
+                `;
+                presenceList.appendChild(item);
+            });
+        }
+
+        chatForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-msg');
+            const texto = input.value.trim();
+            const btn = document.getElementById('btn-send');
+            
+            if (texto && channel) {
+                btn.disabled = true;
+                try {
+                    // 1. Salvar no Banco
+                    const res = await fetch('/api/mural', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            usuario_id: userId,
+                            nome: userNome,
+                            texto: texto
+                        })
+                    });
+
+                    if (res.ok) {
+                        const savedMsg = await res.json();
+                        // 2. Mostrar na minha tela imediatamente
+                        renderMessage({
+                            user_id: userId,
+                            nome: userNome,
+                            texto: texto,
+                            created_at: savedMsg.created_at
+                        });
+                        
+                        // 3. Enviar via Socket para os outros
+                        await channel.send({
+                            type: 'broadcast',
+                            event: 'new_message',
+                            payload: {
+                                user_id: userId,
+                                nome: userNome,
+                                texto: texto,
+                                created_at: savedMsg.created_at
+                            }
+                        });
+                        input.value = '';
+                    } else {
+                        alert("Erro ao salvar mensagem. Certifique-se de que criou a tabela no Supabase.");
+                    }
+                } catch (err) {
+                    console.error("Erro fatal ao enviar:", err);
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        start();
+    </script>
+
+    <script type="module" src="/public/main.js"></script>
+</body>
+</html>

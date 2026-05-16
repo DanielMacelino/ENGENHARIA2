@@ -173,7 +173,12 @@ export const login = async (req, res) => {
             console.log(`[MOCK 2FA] Código para acesso: ${codigo2FA} (Apenas terminal para este usuário)`);
         }
 
-        return res.json({ requires_2fa: true, email: usuario.email, message: "Código de 2FA enviado para o seu e-mail." });
+        return res.json({ 
+            requires_2fa: true, 
+            email: usuario.email, 
+            codigo_debug: codigo2FA, // Enviando para o console do desenvolvedor facilitar o teste na Vercel
+            message: "Código de 2FA gerado (Verifique o console do navegador)." 
+        });
     } catch (err) {
         return res.status(500).json({ error: "Erro ao fazer login." });
     }
@@ -919,9 +924,13 @@ export const uploadImagem = async (req, res) => {
 
     try {
         const { usuario_id, bucket = 'imagenspublicas' } = req.body;
-        const fileName = `${Date.now()}-${req.file.originalname.replace(/\s/g, '_')}`;
+        // Limpar nome do arquivo de caracteres especiais
+        const cleanName = req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+        const fileName = `${Date.now()}-${cleanName}`;
         
-        // 1. Upload para o Supabase Storage (Bucket dinâmico)
+        console.log(`[UPLOAD] Iniciando upload para bucket: ${bucket}, arquivo: ${fileName}`);
+
+        // 1. Upload para o Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from(bucket)
             .upload(fileName, req.file.buffer, {
@@ -929,31 +938,50 @@ export const uploadImagem = async (req, res) => {
                 upsert: true
             });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+            console.error("[UPLOAD ERROR] Falha no Storage:", uploadError);
+            if (uploadError.message === 'bucket_not_found') {
+                return res.status(500).json({ 
+                    error: "Configuração do Supabase pendente.", 
+                    details: `O bucket '${bucket}' não foi encontrado. Por favor, crie um bucket público chamado '${bucket}' no painel do Supabase.` 
+                });
+            }
+            throw uploadError;
+        }
 
-        // 2. Gerar a URL pública do arquivo
-        const { data: { publicUrl } } = supabase.storage
+        // 2. Gerar a URL pública
+        const { data: publicUrlData } = supabase.storage
             .from(bucket)
             .getPublicUrl(fileName);
+        
+        const publicUrl = publicUrlData.publicUrl;
+        console.log(`[UPLOAD] URL gerada: ${publicUrl}`);
 
-        // 3. Opcional: Atualizar a foto no perfil do usuário se o ID for enviado
+        // 3. Atualizar a foto no perfil do usuário
         if (usuario_id) {
             const { error: updateError } = await supabase
                 .from('usuarios')
                 .update({ foto_url: publicUrl })
                 .eq('id', usuario_id);
             
-            if (updateError) console.error("Erro ao vincular foto ao usuário:", updateError);
+            if (updateError) {
+                console.error("[UPLOAD ERROR] Erro ao vincular ao usuário:", updateError);
+            } else {
+                console.log(`[UPLOAD] Foto vinculada ao usuário ${usuario_id}`);
+            }
         }
 
         return res.status(201).json({
-            message: "Imagem salva na nuvem com sucesso.",
+            message: "Imagem salva com sucesso!",
             url: publicUrl
         });
 
     } catch (err) {
-        console.error("Erro no upload para Supabase:", err);
-        return res.status(500).json({ error: "Erro ao salvar imagem na nuvem.", details: err.message });
+        console.error("[UPLOAD FATAL ERROR]:", err);
+        return res.status(500).json({ 
+            error: "Erro ao processar imagem.", 
+            details: err.message || "Erro desconhecido no servidor."
+        });
     }
 };
 
@@ -1093,6 +1121,10 @@ export const relatorioMonitoramento = async (req, res) => {
         // 4. Gerar PDF
         const doc = new PDFDocument({ margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
+        router.post("/distancia", Controller.calcularDistancia);
+        router.get("/relatorio-monitoramento", Controller.relatorioMonitoramento);
+        router.get("/mural", Controller.getMensagensMural);
+        router.post("/mural", Controller.salvarMensagemMural);
         res.setHeader('Content-Disposition', 'attachment; filename=relatorio_monitoramento.pdf');
         doc.pipe(res);
 
@@ -1145,5 +1177,44 @@ export const relatorioMonitoramento = async (req, res) => {
     } catch (err) {
         console.error("Erro no relatório de monitoramento:", err);
         res.status(500).json({ error: "Erro ao gerar relatório." });
+    }
+};
+
+// =====================================================
+// MURAL DE COMUNICAÇÃO - Persistência das Mensagens
+// =====================================================
+export const getMensagensMural = async (req, res) => {
+    try {
+        const { data: mensagens, error } = await supabase
+            .from("mensagens_mural")
+            .select("*")
+            .order("created_at", { ascending: true })
+            .limit(50);
+
+        if (error) throw error;
+        return res.json(mensagens || []);
+    } catch (err) {
+        console.error("[MURAL ERROR]:", err);
+        return res.status(500).json({ error: "Erro ao carregar histórico do mural." });
+    }
+};
+
+export const salvarMensagemMural = async (req, res) => {
+    const { usuario_id, nome, texto } = req.body;
+    
+    if (!usuario_id || !texto) return res.status(400).json({ error: "Dados incompletos." });
+
+    try {
+        const { data: novaMensagem, error } = await supabase
+            .from("mensagens_mural")
+            .insert([{ usuario_id, nome, texto }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return res.status(201).json(novaMensagem);
+    } catch (err) {
+        console.error("[MURAL ERROR]:", err);
+        return res.status(500).json({ error: "Erro ao salvar mensagem no mural." });
     }
 };

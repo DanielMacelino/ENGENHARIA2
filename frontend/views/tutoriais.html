@@ -81,6 +81,30 @@
             font-size: 3.5rem;
             margin: 0 0 15px 0;
             line-height: 1.1;
+            transition: 0.3s;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: var(--bg-dark);
+            z-index: 1000;
+            padding: 0 20px;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
         }
 
         .hero p {
@@ -245,14 +269,48 @@
         }
 
         @media (max-width: 992px) {
-            .content-area { margin-left: 0; }
-            .sidebar { display: none; }
+            .content-area { 
+                margin-left: 0; 
+                padding-top: 60px !important;
+            }
+            .sidebar { 
+                transform: translateX(-100%);
+                transition: 0.3s ease;
+                z-index: 2000;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+                display: block !important;
+            }
+            .mobile-header { display: flex; }
+            .hero { height: 45vh; padding: 0 5%; }
+            .hero h1 { font-size: 2rem; }
+            .hero p { font-size: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        }
+
+        @media (max-width: 480px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+            .hero h1 { font-size: 1.8rem; }
+            .modal-inner { width: 95%; }
         }
     </style>
 </head>
 <body>
 
     <div class="main-wrapper">
+        <!-- Header Mobile -->
+        <header class="mobile-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 30px; height: 30px; background: var(--accent); border-radius: 6px;"></div>
+                <span style="font-weight: 800; font-size: 0.9rem;">IFCE SAÚDE</span>
+            </div>
+            <button class="menu-toggle" onclick="toggleMobileMenu()">
+                <i data-lucide="menu"></i>
+            </button>
+        </header>
+
         <!-- Sidebar Dinâmica -->
         <aside id="sidebar-container" class="sidebar"></aside>
 
@@ -405,6 +463,23 @@
         function playCurrentHero() {
             openPlayer('NtopoEIUEQU');
         }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar-container');
+            sidebar.classList.toggle('active');
+        }
+
+        // Fechar menu ao clicar fora no mobile
+        document.addEventListener('click', (e) => {
+            const sidebar = document.getElementById('sidebar-container');
+            const toggle = document.querySelector('.menu-toggle');
+            if (window.innerWidth <= 992 && 
+                sidebar.classList.contains('active') && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
 
         // Inicialização
         window.onload = () => {

@@ -131,6 +131,7 @@ app.get("/profissional/mapa", (req, res) => res.sendFile(path.join(views, "mapa.
 app.get("/profissional/logs", (req, res) => res.sendFile(path.join(views, "logs.html")));
 app.get("/profissional/estatisticas", (req, res) => res.sendFile(path.join(views, "estatisticas.html")));
 app.get("/tutoriais", (req, res) => res.sendFile(path.join(views, "tutoriais.html")));
+app.get("/comunicacao", (req, res) => res.sendFile(path.join(views, "comunicacao.html")));
 
 
 export default app;

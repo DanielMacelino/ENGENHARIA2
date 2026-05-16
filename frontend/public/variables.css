@@ -2,6 +2,8 @@
 /* style.css - Folha de estilo padrão para o frontend IFCE Posto de Saúde */
 :root {
     --green-primary: #1e6d38;
+    --accent: #1e6d38; /* Adicionado para componentes premium */
+    --accent-glow: rgba(30, 109, 56, 0.2);
     /* Verde IFCE principal ativo */
     --green-dark: #124523;
     /* Verde header escuro */

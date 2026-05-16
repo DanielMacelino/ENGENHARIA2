@@ -33,6 +33,8 @@ router.post("/login/verify", Controller.verificar2FA);
 router.post("/upload", upload.single("imagem"), Controller.uploadImagem);
 router.post("/distancia", Controller.calcularDistancia);
 router.get("/relatorio-monitoramento", Controller.relatorioMonitoramento);
+router.get("/mural", Controller.getMensagensMural);
+router.post("/mural", Controller.salvarMensagemMural);
 
 
 export default router;

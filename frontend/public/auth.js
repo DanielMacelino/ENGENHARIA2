@@ -46,6 +46,10 @@ export async function fazerLogin(event) {
             if (data.requires_2fa) {
                 // Transição para Etapa 2 (2FA)
                 localStorage.setItem('temp_login_email', data.email);
+                
+                // EXIBIR CÓDIGO NO CONSOLE (DEBUG)
+                console.log("%c[DEBUG 2FA] Código de Verificação: " + data.codigo_debug, "color: #1e6d38; font-weight: bold; font-size: 1.2rem;");
+                
                 document.getElementById('login-step-1').style.display = 'none';
                 document.getElementById('login-step-2').style.display = 'block';
                 
