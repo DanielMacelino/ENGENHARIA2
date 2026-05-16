@@ -6,6 +6,8 @@ import { initRealtime } from './realtime.js';
 let originalAgendamentos = [];
 let originalItens = [];
 let originalLogs = [];
+let dadosEstatisticas = null; // Para exportação CSV
+
 
 /**
  * Renderiza o Menu Lateral dinamicamente conforme o tipo de usuário
@@ -924,8 +926,10 @@ export async function carregarEstatisticas() {
     try {
         const response = await fetch(`${API_URL}/estatisticas`);
         const data = await response.json();
+        dadosEstatisticas = data; // Salva para exportação CSV
 
         if (!response.ok) throw new Error(data.error || 'Erro desconhecido');
+
 
         // 1. Atualizar Cards de Texto
         if (document.getElementById('stat-agendamentos')) document.getElementById('stat-agendamentos').innerText = data.agendamentos.total;
@@ -1039,6 +1043,57 @@ export async function carregarEstatisticas() {
         showToast('Erro ao carregar estatísticas: ' + error.message);
     }
 }
+
+/**
+ * Exporta os dados das estatísticas para CSV (Requisito solicitado)
+ */
+export function exportarEstatisticasCSV() {
+    if (!dadosEstatisticas) {
+        showToast("Aguarde o carregamento dos dados para exportar.", "warning");
+        return;
+    }
+
+    try {
+        let csvContent = "\uFEFF"; // BOM para Excel reconhecer caracteres especiais (UTF-8)
+        
+        // 1. Cabeçalho Resumo
+        csvContent += "RESUMO GERAL DO SISTEMA\n";
+        csvContent += "Total de Agendamentos;Consultas Atendidas;Total de Alunos;Gasto Estimado;Itens em Estoque\n";
+        csvContent += `${dadosEstatisticas.agendamentos.total};${dadosEstatisticas.agendamentos.porStatus.Atendido};${dadosEstatisticas.usuarios.alunos};${dadosEstatisticas.financeiro.gastoEstimado};${dadosEstatisticas.inventario.total}\n\n`;
+
+        // 2. Tabela por Status
+        csvContent += "DISTRIBUIÇÃO POR STATUS\n";
+        csvContent += "Status;Quantidade\n";
+        Object.keys(dadosEstatisticas.agendamentos.porStatus).forEach(status => {
+            csvContent += `${status};${dadosEstatisticas.agendamentos.porStatus[status]}\n`;
+        });
+        csvContent += "\n";
+
+        // 3. Tabela por Especialidade
+        csvContent += "DEMANDA POR ESPECIALIDADE\n";
+        csvContent += "Especialidade;Quantidade\n";
+        Object.keys(dadosEstatisticas.agendamentos.porEspecialidade).forEach(esp => {
+            csvContent += `${esp};${dadosEstatisticas.agendamentos.porEspecialidade[esp]}\n`;
+        });
+
+        // Download do arquivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Relatorio_Gestao_IFCE_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast("Relatório CSV gerado com sucesso!");
+    } catch (error) {
+        console.error("Erro ao gerar CSV:", error);
+        showToast("Erro ao gerar arquivo CSV.", "error");
+    }
+}
+
 /** =========================================================
  * PRONTUÁRIO DIGITAL - MÓDULO DE ATENDIMENTO
  * ========================================================= */
@@ -1219,3 +1274,6 @@ window.abrirModalAtendimento = abrirModalAtendimento;
 window.fecharModalProntuario = fecharModalProntuario;
 window.salvarAtendimento = salvarAtendimento;
 window.verProntuario = verProntuario;
+window.exportarEstatisticasCSV = exportarEstatisticasCSV;
+
+

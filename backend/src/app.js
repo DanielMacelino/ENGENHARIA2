@@ -4,6 +4,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import router from "./routes/userRoutes.js";
 import { seedDatabase } from "./seedLogic.js";
+import { executarBackupNuvem } from "./services/backupService.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,6 +54,28 @@ app.get("/api/seed", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Rota de Backup Diário (Acionada pelo Vercel Cron)
+app.get("/api/backup-diario", async (req, res) => {
+    // Verificação de segurança simples para evitar acessos externos (Opcional, mas recomendado)
+    // O Vercel Cron pode enviar um cabeçalho de autorização se configurado
+    const authHeader = req.headers['authorization'];
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return res.status(401).json({ error: "Não autorizado" });
+    }
+
+    try {
+        const result = await executarBackupNuvem();
+        if (result.success) {
+            res.json({ message: "Backup realizado e enviado para o Supabase Storage!", details: result.details });
+        } else {
+            res.status(500).json({ error: "Erro ao realizar backup", details: result.error });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 // Rotas de Autenticação
 app.get("/", (req, res) => res.sendFile(path.join(views, "login.html")));

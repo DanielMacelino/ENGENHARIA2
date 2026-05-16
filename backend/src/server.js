@@ -2,6 +2,8 @@ import app from "./app.js";
 import { supabase } from "../supabaseClient.js";
 import { hashPassword } from "../userController.js";
 
+
+
 const PORT = process.env.PORT || 3000;
 
 // Função para garantir que o usuário Daniel Marcelino exista
@@ -26,3 +28,4 @@ app.listen(PORT, async () => {
     await seedUser();
     console.log(`Servidor rodando em: http://localhost:${PORT}`);
 });
+

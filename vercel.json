@@ -14,5 +14,12 @@
     "api/index.js": {
       "includeFiles": "frontend/**"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/backup-diario",
+      "schedule": "0 20 * * *"
+    }
+  ]
 }
+
