@@ -197,6 +197,8 @@
 
         if (!userId) {
             window.location.href = '/login';
+        } else if (userTipo !== 'profissional') {
+            window.location.href = '/aluno/dashboard';
         }
 
         async function start() {

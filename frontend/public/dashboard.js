@@ -43,7 +43,6 @@ export function renderSidebar() {
             <li><a href="/aluno/novo-agendamento" class="${path === '/aluno/novo-agendamento' ? 'active' : ''}"><i data-lucide="plus-circle" style="width:18px;height:18px;color:var(--green-primary);"></i> Agendar Consulta</a></li>
             <li><a href="/aluno/agendamentos" class="${path === '/aluno/agendamentos' ? 'active' : ''}"><i data-lucide="calendar" style="width:18px;height:18px;"></i> Meus Agendamentos</a></li>
             <li><a href="/tutoriais" class="${path === '/tutoriais' ? 'active' : ''}"><i data-lucide="play-circle" style="width:18px;height:18px;color:var(--accent);"></i> IFCE Saúde Play</a></li>
-            <li><a href="/comunicacao" class="${path === '/comunicacao' ? 'active' : ''}"><i data-lucide="message-square" style="width:18px;height:18px;color:var(--accent);"></i> Mural da Equipe <span class="badge-new">SOCKET</span></a></li>
             <li><a href="/aluno/mapa" class="${path === '/aluno/mapa' ? 'active' : ''}"><i data-lucide="map-pin" style="width:18px;height:18px;"></i> Mapa e Distância</a></li>
 
             <li><a href="/aluno/informacoes" class="${path === '/aluno/informacoes' ? 'active' : ''}"><i data-lucide="book" style="width:18px;height:18px;"></i> Informações Acadêmicas</a></li>
@@ -56,6 +55,7 @@ export function renderSidebar() {
             <li><a href="/profissional/estatisticas" class="${path === '/profissional/estatisticas' ? 'active' : ''}"><i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i> Estatísticas Gerais</a></li>
             <li><a href="/tutoriais" class="${path === '/tutoriais' ? 'active' : ''}"><i data-lucide="play-circle" style="width:18px;height:18px;color:var(--accent);"></i> IFCE Saúde Play</a></li>
             <li><a href="/comunicacao" class="${path === '/comunicacao' ? 'active' : ''}"><i data-lucide="message-square" style="width:18px;height:18px;color:var(--accent);"></i> Mural da Equipe <span class="badge-new">SOCKET</span></a></li>
+            <li><a href="/profissional/mapa" class="${path === '/profissional/mapa' ? 'active' : ''}"><i data-lucide="map-pin" style="width:18px;height:18px;"></i> Mapa e Distância</a></li>
             <li><a href="/profissional/logs" class="${path === '/profissional/logs' ? 'active' : ''}"><i data-lucide="history" style="width:18px;height:18px;"></i> Histórico do Sistema</a></li>
 
 
@@ -217,9 +217,40 @@ export function renderizarTabelaProfissional(pacientes) {
         else if (p.status === 'Confirmado' || p.status === 'Pendente') aguardando++;
 
         const dataFormatada = p.data ? p.data.split('-').reverse().join('/') : 'N/A';
+
+        // Parse triagem se houver
+        let triagemHTML = '';
+        let urgenciaCor = '';
+
+        if (p.observacoes) {
+            try {
+                const obsObj = JSON.parse(p.observacoes);
+                if (obsObj.triagem) {
+                    const trg = obsObj.triagem;
+                    if (trg.urgencia === 'Leve') { urgenciaCor = '#2ecc71'; }
+                    else if (trg.urgencia === 'Moderado') { urgenciaCor = '#f1c40f'; }
+                    else if (trg.urgencia === 'Grave') { urgenciaCor = '#e74c3c'; }
+
+                    triagemHTML = `
+                        <div class="triagem-indicator" style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer; background: ${urgenciaCor}15; padding: 2px 8px; border-radius: 20px; border: 1px solid ${urgenciaCor}; margin-top: 4px;" onclick="mostrarTooltipTriagem('${p.id}')" title="Clique para ver a triagem completa">
+                            <span style="font-weight: 700; color: ${urgenciaCor}; font-size: 0.75rem;">${trg.urgencia}</span>
+                            <span style="font-size: 0.75rem;">📋</span>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                // Não é JSON
+            }
+        }
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${p.usuarios ? p.usuarios.nome : 'N/A'}</td>
+            <td>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-weight: 600;">${p.usuarios ? p.usuarios.nome : 'N/A'}</span>
+                    <div>${triagemHTML}</div>
+                </div>
+            </td>
             <td>${dataFormatada}</td>
             <td>${p.hora}</td>
             <td>${p.especialidade}</td>
@@ -489,21 +520,163 @@ export function selecionarHorarioSimplificado(hora, profId, profNome) {
     }
 }
 
+export function abrirModalTriagem() {
+    const modal = document.createElement('div');
+    modal.id = 'modal-triagem-aluno';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 550px; text-align: left; border-top: 6px solid var(--accent); border-radius: 12px; background: white; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <h3 style="margin-bottom: 10px; color: var(--accent); display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.3rem;">
+                <span style="font-size: 1.5rem;">🏥</span> Triagem Pré-Consulta Inteligente
+            </h3>
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
+                Responda às perguntas rápidas para que o profissional de saúde entenda seu estado clínico.
+            </p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 700; display: block; margin-bottom: 8px; font-size: 0.95rem; color: #2c3e50;">1. Quais sintomas você está apresentando? (Selecione vários)</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #edf2f7;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer; color: #4a5568;">
+                        <input type="checkbox" name="sintoma" value="Febre"> Febre
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer; color: #4a5568;">
+                        <input type="checkbox" name="sintoma" value="Dor de cabeça"> Dor de cabeça
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer; color: #4a5568;">
+                        <input type="checkbox" name="sintoma" value="Dor no corpo / Cansaço"> Dor no corpo / Cansaço
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer; color: #4a5568;">
+                        <input type="checkbox" name="sintoma" value="Tosse / Coriza / Dor de garganta"> Sintomas gripais
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer; color: #4a5568;">
+                        <input type="checkbox" name="sintoma" value="Tristeza / Desânimo persistente"> Tristeza / Desânimo
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer; color: #4a5568;">
+                        <input type="checkbox" name="sintoma" value="Ansiedade / Estresse extremo"> Ansiedade / Estresse
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer; color: #4a5568;">
+                        <input type="checkbox" name="sintoma" value="Dor de dente"> Dor de dente
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer; color: #4a5568;">
+                        <input type="checkbox" name="sintoma" value="Outros sintomas"> Outros
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 700; display: block; margin-bottom: 8px; font-size: 0.95rem; color: #2c3e50;">2. Há quantos dias os sintomas começaram?</label>
+                <select id="triagem-duracao" class="form-control" style="padding: 10px; border-radius: 8px;">
+                    <option value="Começou hoje">Começou hoje</option>
+                    <option value="1 a 3 dias">1 a 3 dias</option>
+                    <option value="4 a 7 dias">4 a 7 dias</option>
+                    <option value="Mais de uma semana">Mais de uma semana</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 700; display: block; margin-bottom: 8px; font-size: 0.95rem; color: #2c3e50;">3. Qual é a intensidade do seu incômodo/dor?</label>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-urgencia" data-urgencia="Leve" onclick="selecionarUrgenciaTriagem('Leve', this)" style="flex: 1; padding: 12px; border: 2px solid #2ecc71; border-radius: 8px; background: #f0fdf4; color: #27ae60; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                        🟢 Leve
+                    </button>
+                    <button type="button" class="btn-urgencia" data-urgencia="Moderado" onclick="selecionarUrgenciaTriagem('Moderado', this)" style="flex: 1; padding: 12px; border: 2px solid #f1c40f; border-radius: 8px; background: #fef9e7; color: #d4ac0d; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                        🟡 Moderado
+                    </button>
+                    <button type="button" class="btn-urgencia" data-urgencia="Grave" onclick="selecionarUrgenciaTriagem('Grave', this)" style="flex: 1; padding: 12px; border: 2px solid #e74c3c; border-radius: 8px; background: #fdf2f2; color: #c0392b; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                        🔴 Grave
+                    </button>
+                </div>
+                <input type="hidden" id="triagem-urgencia" value="Leve">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 700; display: block; margin-bottom: 8px; font-size: 0.95rem; color: #2c3e50;">4. Descreva brevemente seus sintomas (Opcional)</label>
+                <textarea id="triagem-relato" class="form-control" rows="2" placeholder="Fale em suas palavras o que está sentindo..." style="padding: 10px; border-radius: 8px; resize: none;"></textarea>
+            </div>
+
+            <div class="modal-actions" style="justify-content: flex-end; gap: 10px; display: flex; margin-top: 20px;">
+                <button type="button" onclick="fecharModalTriagem()" class="btn-clear" style="padding: 10px 20px;">Cancelar</button>
+                <button type="button" onclick="enviarAgendamentoComTriagem()" class="btn-green" style="padding: 10px 25px; background: var(--accent); border: none; box-shadow: 0 4px 12px var(--accent-glow);">✓ Finalizar Agendamento</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Set default selected styling
+    const leveBtn = modal.querySelector('button[data-urgencia="Leve"]');
+    if (leveBtn) {
+        leveBtn.style.transform = 'scale(1.05)';
+        leveBtn.style.boxShadow = '0 0 0 3px rgba(46, 204, 113, 0.3)';
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+export function fecharModalTriagem() {
+    const modal = document.getElementById('modal-triagem-aluno');
+    if (modal) modal.remove();
+}
+
+export function selecionarUrgenciaTriagem(nivel, element) {
+    document.getElementById('triagem-urgencia').value = nivel;
+    
+    // Reset other buttons
+    document.querySelectorAll('.btn-urgencia').forEach(btn => {
+        btn.style.transform = 'scale(1)';
+        btn.style.boxShadow = 'none';
+    });
+    
+    // Highlight selected
+    element.style.transform = 'scale(1.05)';
+    let glowColor = 'rgba(46, 204, 113, 0.3)';
+    if (nivel === 'Moderado') glowColor = 'rgba(241, 196, 15, 0.3)';
+    if (nivel === 'Grave') glowColor = 'rgba(231, 76, 60, 0.3)';
+    element.style.boxShadow = `0 0 0 3px ${glowColor}`;
+}
+
 export async function confirmarAgendamentoSimplificado() {
     const usuarioId = localStorage.getItem('usuario_id');
-    
     if (!usuarioId) {
         showToast("Sessão expirada. Faça login novamente.");
         return;
     }
+    abrirModalTriagem();
+}
+
+export async function enviarAgendamentoComTriagem() {
+    const usuarioId = localStorage.getItem('usuario_id');
+    
+    // Coleta dados da triagem
+    const sintomas = Array.from(document.querySelectorAll('input[name="sintoma"]:checked')).map(cb => cb.value);
+    const duracao = document.getElementById('triagem-duracao').value;
+    const urgencia = document.getElementById('triagem-urgencia').value;
+    const relato = document.getElementById('triagem-relato').value.trim();
+
+    if (sintomas.length === 0) {
+        showToast("Por favor, selecione ao menos um sintoma da lista.", "warning");
+        return;
+    }
+
+    const triagemJSON = {
+        triagem: {
+            sintomas,
+            duracao,
+            urgencia,
+            relato: relato || "Sem relato em texto."
+        }
+    };
 
     const payload = {
         usuario_id: usuarioId,
         profissional_id: agendamentoSelecionado.profissional_id,
         especialidade: agendamentoSelecionado.especialidade,
         data: agendamentoSelecionado.data,
-        hora: agendamentoSelecionado.hora
+        hora: agendamentoSelecionado.hora,
+        observacoes: JSON.stringify(triagemJSON)
     };
+
+    const btn = document.querySelector('button[onclick="enviarAgendamentoComTriagem()"]');
+    if (btn) { btn.disabled = true; btn.innerText = "Agendando..."; }
 
     try {
         const response = await fetch(`${API_URL}/agendamentos`, {
@@ -513,6 +686,7 @@ export async function confirmarAgendamentoSimplificado() {
         });
 
         if (response.ok) {
+            fecharModalTriagem();
             showToast(`✅ Sucesso! Seu agendamento para ${agendamentoSelecionado.especialidade} foi solicitado.`);
             window.location.href = '/aluno/agendamentos';
         } else {
@@ -522,6 +696,8 @@ export async function confirmarAgendamentoSimplificado() {
     } catch (error) {
         console.error('Erro no agendamento:', error);
         showToast("Erro de conexão com o servidor.");
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "✓ Finalizar Agendamento"; }
     }
 }
 
@@ -1105,12 +1281,46 @@ export function exportarEstatisticasCSV() {
  * ========================================================= */
 
 export function abrirModalAtendimento(id) {
+    const agendamento = originalAgendamentos.find(a => a.id == id);
+    let triagemBoxHTML = '';
+    
+    if (agendamento && agendamento.observacoes) {
+        try {
+            const obsObj = JSON.parse(agendamento.observacoes);
+            if (obsObj.triagem) {
+                const trg = obsObj.triagem;
+                let urgenciaEmoji = '🟢';
+                let urgenciaCor = '#2ecc71';
+                if (trg.urgencia === 'Moderado') { urgenciaEmoji = '🟡'; urgenciaCor = '#f1c40f'; }
+                if (trg.urgencia === 'Grave') { urgenciaEmoji = '🔴'; urgenciaCor = '#e74c3c'; }
+
+                triagemBoxHTML = `
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid ${urgenciaCor}; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #475569; font-size: 0.95rem; font-weight: 700; display:flex; align-items:center; gap:6px;">
+                            📌 Triagem Pré-Consulta (Preenchida pelo Aluno)
+                        </h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.85rem; margin-bottom:8px; color:#64748b;">
+                            <span><strong>Urgência:</strong> <span style="font-weight:700; color:${urgenciaCor};">${urgenciaEmoji} ${trg.urgencia}</span></span>
+                            <span><strong>Início dos sintomas:</strong> ${trg.duracao}</span>
+                        </div>
+                        <p style="margin:0 0 8px 0; font-size:0.85rem; color:#475569;"><strong>Sintomas:</strong> ${trg.sintomas.join(', ')}</p>
+                        <p style="margin:0; font-size:0.85rem; color:#64748b; font-style:italic;"><strong>Relato:</strong> "${trg.relato || 'Sem descrição adicional.'}"</p>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            // Ignora
+        }
+    }
+
     const modal = document.createElement('div');
     modal.id = 'modal-prontuario';
     modal.className = 'modal-overlay';
     modal.innerHTML = `
         <div class="modal-content" style="max-width: 600px; text-align: left;">
             <h3 style="margin-bottom: 15px; color: var(--green-primary);"><i data-lucide="stethoscope" style="vertical-align: middle;"></i> Prontuário Eletrônico (PEP)</h3>
+            
+            ${triagemBoxHTML}
             
             <div style="margin-bottom: 12px;">
                 <label style="font-weight: 600; display: block; margin-bottom: 5px;">Sintomas Relatados:</label>
@@ -1151,7 +1361,25 @@ export async function salvarAtendimento(id) {
         return showToast("Por favor, preencha ao menos um campo do prontuário.");
     }
 
-    const observacoes = JSON.stringify({ sintomas, diagnostico, prescricao });
+    const agendamento = originalAgendamentos.find(a => a.id == id);
+    let triagemData = null;
+    if (agendamento && agendamento.observacoes) {
+        try {
+            const obsObj = JSON.parse(agendamento.observacoes);
+            if (obsObj.triagem) {
+                triagemData = obsObj.triagem;
+            }
+        } catch (e) {
+            // Ignora
+        }
+    }
+
+    const observacoesObj = { sintomas, diagnostico, prescricao };
+    if (triagemData) {
+        observacoesObj.triagem = triagemData;
+    }
+
+    const observacoes = JSON.stringify(observacoesObj);
 
     try {
         const response = await fetch(`${API_URL}/agendamentos/${id}/status`, {
@@ -1177,12 +1405,27 @@ export function verProntuario(id) {
     let textoJSON = agendamento ? agendamento.observacoes : '';
     
     let dados = { sintomas: 'N/A', diagnostico: 'N/A', prescricao: 'N/A' };
+    let triagemBox = '';
     try {
         dados = JSON.parse(textoJSON);
+        if (dados.triagem) {
+            const trg = dados.triagem;
+            let urgenciaEmoji = '🟢';
+            let urgenciaCor = '#2ecc71';
+            if (trg.urgencia === 'Moderado') { urgenciaEmoji = '🟡'; urgenciaCor = '#f1c40f'; }
+            if (trg.urgencia === 'Grave') { urgenciaEmoji = '🔴'; urgenciaCor = '#e74c3c'; }
+            
+            triagemBox = `
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid ${urgenciaCor}; padding: 10px 15px; border-radius: 6px; margin-top: 15px; font-size: 0.85rem;">
+                    <p style="margin:0 0 5px 0; font-weight:700; color:#475569;">📋 Ficha de Triagem Inicial do Aluno:</p>
+                    <p style="margin:0 0 3px 0;"><strong>Sintomas:</strong> ${trg.sintomas.join(', ')} (Grau: <span style="color:${urgenciaCor}; font-weight:700;">${urgenciaEmoji} ${trg.urgencia}</span>)</p>
+                    <p style="margin:0;"><strong>Relato:</strong> "${trg.relato || 'Sem relato adicional.'}"</p>
+                </div>
+            `;
+        }
     } catch (e) {
         dados.prescricao = textoJSON || 'N/A'; // Retrocompatibilidade
     }
-
 
     const modal = document.createElement('div');
     modal.id = 'modal-prontuario';
@@ -1197,6 +1440,8 @@ export function verProntuario(id) {
                 <p><strong>Diagnóstico / Avaliação:</strong><br> ${dados.diagnostico || 'N/A'}</p>
                 <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
                 <p><strong>Prescrição / Orientações:</strong><br> ${(dados.prescricao || 'N/A').replace(/\n/g, '<br>')}</p>
+                
+                ${triagemBox}
             </div>
 
             <div class="modal-actions" style="justify-content: flex-end;">
@@ -1207,6 +1452,53 @@ export function verProntuario(id) {
     document.body.appendChild(modal);
     if (window.lucide) window.lucide.createIcons();
 }
+
+export function mostrarTooltipTriagem(id) {
+    const agendamento = originalAgendamentos.find(a => a.id == id);
+    if (!agendamento || !agendamento.observacoes) return;
+
+    try {
+        const obsObj = JSON.parse(agendamento.observacoes);
+        if (!obsObj.triagem) return;
+        const trg = obsObj.triagem;
+
+        let urgenciaEmoji = '🟢';
+        let urgenciaCor = '#2ecc71';
+        if (trg.urgencia === 'Moderado') { urgenciaEmoji = '🟡'; urgenciaCor = '#f1c40f'; }
+        if (trg.urgencia === 'Grave') { urgenciaEmoji = '🔴'; urgenciaCor = '#e74c3c'; }
+
+        const modal = document.createElement('div');
+        modal.id = 'modal-triagem-detalhes';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 450px; text-align: left; border-top: 5px solid ${urgenciaCor}; border-radius: 12px; background: white; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                <h3 style="margin-bottom: 15px; color: ${urgenciaCor}; font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">📋</span> Ficha de Triagem Pré-Consulta
+                </h3>
+                
+                <div style="display:flex; flex-direction:column; gap:12px; font-size: 0.9rem; color: #2c3e50;">
+                    <p style="margin: 0;"><strong>Paciente:</strong> ${agendamento.usuarios ? agendamento.usuarios.nome : 'N/A'}</p>
+                    <p style="margin: 0;"><strong>Grau de Urgência:</strong> <span style="font-weight: 700; color: ${urgenciaCor};">${urgenciaEmoji} ${trg.urgencia}</span></p>
+                    <p style="margin: 0;"><strong>Sintomas Relatados:</strong><br> ${trg.sintomas.join(', ')}</p>
+                    <p style="margin: 0;"><strong>Tempo de Início:</strong> ${trg.duracao}</p>
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #cbd5e1; margin-top: 5px;">
+                        <strong>Relato do Aluno:</strong><br>
+                        <span style="font-style: italic; color: #475569;">"${trg.relato || 'Sem relato adicional.'}"</span>
+                    </div>
+                </div>
+
+                <div class="modal-actions" style="justify-content: flex-end; margin-top: 20px; display: flex; gap: 10px;">
+                    <button onclick="document.getElementById('modal-triagem-detalhes').remove()" class="btn-green" style="background: ${urgenciaCor}; border: none; padding: 10px 20px; box-shadow: 0 4px 12px ${urgenciaCor}30;">Fechar Ficha</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        if (window.lucide) window.lucide.createIcons();
+    } catch (e) {
+        console.error("Erro ao mostrar triagem:", e);
+    }
+}
+
 /**
  * Calcula a distância entre dois pontos selecionados na página de mapa (Requisito I)
  */
@@ -1281,5 +1573,10 @@ window.fecharModalProntuario = fecharModalProntuario;
 window.salvarAtendimento = salvarAtendimento;
 window.verProntuario = verProntuario;
 window.exportarEstatisticasCSV = exportarEstatisticasCSV;
+window.abrirModalTriagem = abrirModalTriagem;
+window.fecharModalTriagem = fecharModalTriagem;
+window.selecionarUrgenciaTriagem = selecionarUrgenciaTriagem;
+window.enviarAgendamentoComTriagem = enviarAgendamentoComTriagem;
+window.mostrarTooltipTriagem = mostrarTooltipTriagem;
 
 

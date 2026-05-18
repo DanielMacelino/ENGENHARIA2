@@ -639,7 +639,7 @@ export const getHorarios = async (req, res) => {
 // CRIAR AGENDAMENTO - Marca nova consulta
 // =====================================================
 export const criarAgendamento = async (req, res) => {
-    const { usuario_id, profissional_id, data, hora, especialidade } = req.body;
+    const { usuario_id, profissional_id, data, hora, especialidade, observacoes } = req.body;
 
     if (!usuario_id || !profissional_id || !data || !hora || !especialidade) {
         return res.status(400).json({ error: "Todos os campos são obrigatórios." });
@@ -660,16 +660,21 @@ export const criarAgendamento = async (req, res) => {
             return res.status(400).json({ error: "Este horário já foi preenchido por outro aluno. Por favor, escolha outro." });
         }
         // ---------------------------------------------------------------------------
+        const insertData = {
+            usuario_id,
+            profissional_id,
+            especialidade,
+            data,
+            hora,
+            status: "Pendente"
+        };
+        if (observacoes) {
+            insertData.observacoes = observacoes;
+        }
+
         const { data: novoAgendamento, error } = await supabase
             .from("agendamentos")
-            .insert([{
-                usuario_id,
-                profissional_id,
-                especialidade,
-                data,
-                hora,
-                status: "Pendente"
-            }])
+            .insert([insertData])
             .select()
             .single();
 
