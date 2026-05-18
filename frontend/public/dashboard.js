@@ -1027,13 +1027,44 @@ export async function carregarLogs() {
     }
 }
 
+let autoRefreshInterval = null;
+
+export async function carregarLogsCustom() {
+    const icon = document.getElementById('icon-refresh');
+    if (icon) icon.classList.add('spinning');
+    
+    await carregarLogs();
+    
+    if (icon) {
+        setTimeout(() => {
+            icon.classList.remove('spinning');
+        }, 600);
+    }
+}
+
+export function toggleAutoRefresh(checkbox) {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    
+    if (checkbox.checked) {
+        showToast('Auto-atualização de logs ativada (10s)!');
+        autoRefreshInterval = setInterval(() => {
+            carregarLogsCustom();
+        }, 10000);
+    } else {
+        showToast('Auto-atualização desativada.');
+    }
+}
+
 export function renderizarTabelaLogs(logs) {
     const tbody = document.getElementById('tabela-logs');
     if (!tbody) return;
 
     tbody.innerHTML = '';
     if (logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum log encontrado para os filtros selecionados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Nenhum log encontrado para os filtros selecionados.</td></tr>';
         return;
     }
 
@@ -1043,14 +1074,106 @@ export function renderizarTabelaLogs(logs) {
         const dataObj = new Date(log.created_at);
         const dataFormatada = dataObj.toLocaleString('pt-BR');
 
+        // Mapeamento retrocompatível das colunas do banco logs
+        const autor = log.usuarios?.nome || log.usuario_nome || 'Sistema';
+        const acao = log.metodo || log.acao || 'Acesso';
+        const detalhes = log.rota || log.detalhes || '---';
+
+        // Definir coluna de Perfil / Especialidade
+        let perfilHtml = '';
+        if (log.usuarios) {
+            const perfil = log.usuarios.tipo_usuario;
+            const esp = log.usuarios.especialidade;
+            if (perfil === 'profissional') {
+                perfilHtml = `<span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: #6366f1; background: #e0e7ff; border: 1px solid #c7d2fe;">🩺 Profissional${esp ? ' (' + esp + ')' : ''}</span>`;
+            } else if (perfil === 'aluno') {
+                perfilHtml = `<span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: #0284c7; background: #e0f2fe; border: 1px solid #bae6fd;">🎓 Aluno</span>`;
+            } else {
+                perfilHtml = `<span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0;">💻 Outro</span>`;
+            }
+        } else {
+            perfilHtml = `<span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0;">💻 Sistema</span>`;
+        }
+
+        // Definir coluna de Recurso Técnico
+        let recursoHtml = '';
+        const isRequestLog = ['GET', 'POST', 'PUT', 'DELETE'].includes(log.metodo) && log.rota && log.rota.startsWith('/');
+        if (isRequestLog) {
+            let methodBg = '#f1f5f9';
+            let methodColor = '#475569';
+            if (log.metodo === 'GET') { methodBg = '#ecfdf5'; methodColor = '#059669'; }
+            else if (log.metodo === 'POST') { methodBg = '#eff6ff'; methodColor = '#2563eb'; }
+            else if (log.metodo === 'PUT') { methodBg = '#fffbeb'; methodColor = '#d97706'; }
+            else if (log.metodo === 'DELETE') { methodBg = '#fef2f2'; methodColor = '#dc2626'; }
+
+            recursoHtml = `
+                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span style="font-family: monospace; font-size: 0.75rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${methodBg}; color: ${methodColor}; border: 1px solid ${methodColor}22;">
+                        ${log.metodo}
+                    </span>
+                    <span style="font-family: monospace; font-size: 0.75rem; color: #64748b;">
+                        ${log.rota}
+                    </span>
+                </div>
+            `;
+        } else {
+            // É um log de auditoria personalizado rico
+            recursoHtml = `
+                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                    <span style="font-family: monospace; font-size: 0.75rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0;">
+                        AUDIT
+                    </span>
+                    <span style="font-family: monospace; font-size: 0.75rem; color: #94a3b8;">
+                        N/A (Interface)
+                    </span>
+                </div>
+            `;
+        }
+
+        // Escolher cor do badge conforme o tipo de ação
+        let badgeColor = '#64748b'; // Cinza default
+        let badgeBg = '#f1f5f9';
+
+        if (acao.includes('Login')) {
+            badgeColor = '#3b82f6';
+            badgeBg = '#eff6ff';
+        } else if (acao.includes('Consulta') || acao.includes('Atendimento')) {
+            badgeColor = '#8b5cf6';
+            badgeBg = '#f5f3ff';
+        } else if (acao.includes('Excluído') || acao.includes('Cancelado') || acao.includes('DELETE')) {
+            badgeColor = '#ef4444';
+            badgeBg = '#fef2f2';
+        } else if (acao.includes('Adicionado') || acao.includes('Cadastro') || acao.includes('Configurada') || acao.includes('Salvo') || acao.includes('POST')) {
+            badgeColor = '#10b981';
+            badgeBg = '#ecfdf5';
+        } else if (acao.includes('Mural')) {
+            badgeColor = '#f59e0b';
+            badgeBg = '#fffbeb';
+        }
+
         tr.innerHTML = `
-            <td>${dataFormatada}</td>
-            <td>${log.usuario_nome || 'Sistema'}</td>
-            <td>${log.acao}</td>
-            <td>${log.detalhes || '---'}</td>
+            <td><strong style="color: #475569;">${dataFormatada}</strong></td>
+            <td>
+                <span class="user-pill" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: #1e293b;">
+                    <i data-lucide="user" style="width: 14px; height: 14px; color: #64748b;"></i>
+                    ${autor}
+                </span>
+            </td>
+            <td>${perfilHtml}</td>
+            <td>
+                <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: ${badgeColor}; background: ${badgeBg}; border: 1px solid ${badgeColor}22;">
+                    ${acao}
+                </span>
+            </td>
+            <td style="color: #334155; font-size: 0.9rem; font-weight: 500;">${detalhes}</td>
+            <td>${recursoHtml}</td>
         `;
         tbody.appendChild(tr);
     });
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 }
 
 export function filtrarLogs() {
@@ -1060,10 +1183,18 @@ export function filtrarLogs() {
     let filtrados = originalLogs;
 
     if (dataFiltro) {
-        filtrados = filtrados.filter(log => log.created_at.startsWith(dataFiltro));
+        filtrados = filtrados.filter(log => {
+            const dataLog = log.created_at || log.data || '';
+            return dataLog.startsWith(dataFiltro);
+        });
     }
     if (acao) {
-        filtrados = filtrados.filter(log => log.acao.toLowerCase().includes(acao));
+        filtrados = filtrados.filter(log => {
+            const acaoText = (log.metodo || log.acao || '').toLowerCase();
+            const detalhesText = (log.rota || log.detalhes || '').toLowerCase();
+            const autorText = (log.usuarios?.nome || log.usuario_nome || '').toLowerCase();
+            return acaoText.includes(acao) || detalhesText.includes(acao) || autorText.includes(acao);
+        });
     }
 
     renderizarTabelaLogs(filtrados);
@@ -1578,5 +1709,7 @@ window.fecharModalTriagem = fecharModalTriagem;
 window.selecionarUrgenciaTriagem = selecionarUrgenciaTriagem;
 window.enviarAgendamentoComTriagem = enviarAgendamentoComTriagem;
 window.mostrarTooltipTriagem = mostrarTooltipTriagem;
+window.carregarLogsCustom = carregarLogsCustom;
+window.toggleAutoRefresh = toggleAutoRefresh;
 
 

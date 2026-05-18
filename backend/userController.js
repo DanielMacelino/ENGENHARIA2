@@ -35,31 +35,34 @@ const verifyPassword = (password, storedPassword) => {
 
 const logsRequisicoes = [];
 
-export const registrarLog = async (metodo, rota, usuario_nome = "Sistema") => {
+export const registrarLog = async (metodo, rota, usuario_id = null, acaoCustom = null, detalhesCustom = null) => {
     try {
         const agora = new Date();
         const data = agora.toISOString().split("T")[0];
+        const horario = agora.toTimeString().split(" ")[0]; // "10:15:30"
+        
         // Ignorar logs de arquivos estáticos e do próprio log para não poluir
         if (rota.includes('.') || rota.includes('/api/logs')) return;
 
-        await supabase.from("logs").insert([{
-            acao: `${metodo} ${rota}`,
-            detalhes: `Acesso à rota via sistema`,
-            usuario_nome: usuario_nome,
-            data: data
-        }]).then(({ error }) => {
-            if (error && error.message.includes('column "acao"')) {
-                // Fallback se a coluna 'acao' não existir (usa apenas detalhes)
-                return supabase.from("logs").insert([{
-                    detalhes: `${metodo} ${rota} - Acesso via Browser`,
-                    usuario_nome: usuario_nome,
-                    data: data
-                }]);
-            }
-        });
+        const acao = acaoCustom || metodo;
+        const detalhes = detalhesCustom || `Acesso à rota: ${rota}`;
+
+        console.log(`[AUDIT LOG] Gravando: ${acao} - ${detalhes} (User ID: ${usuario_id || 'Sistema'})...`);
+
+        const { error } = await supabase.from("logs").insert([{
+            data: data,
+            horario: horario,
+            metodo: acao,
+            rota: detalhes,
+            usuario_id: usuario_id
+        }]);
+
+        if (error) {
+            console.error(`[AUDIT LOG ERROR] Falha ao inserir log no Supabase:`, error.message);
+        }
 
     } catch (e) {
-        // Silencioso para não travar a requisição principal
+        console.error(`[AUDIT LOG ERROR] Falha catastrófica no log:`, e);
     }
 };
 
@@ -88,6 +91,7 @@ export const registrarUsuario = async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
+        await registrarLog("POST", "/api/cadastro", novoUsuario.id, "Novo Cadastro", `Usuário "${nome}" cadastrado com perfil de ${tipo_usuario}`);
         return res.status(201).json({ message: "Usuário cadastrado com sucesso!", id: novoUsuario.id });
     } catch (err) {
         return res.status(500).json({ error: "Erro ao realizar cadastro." });
@@ -224,6 +228,7 @@ export const criarItem = async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
+        await registrarLog("POST", "/api/itens", null, "Item Adicionado", `O item "${nome}" foi adicionado ao inventário`);
         return res.status(201).json(novoItem);
     } catch (err) {
         return res.status(500).json({ error: "Erro ao criar item." });
@@ -237,6 +242,10 @@ export const deleteItem = async (req, res) => {
     const { id } = req.params;
 
     try {
+        // Query item details first for a better log
+        const { data: item } = await supabase.from("itens").select("nome, codigo").eq("id", id).single();
+        const itemInfo = item ? `"${item.nome}" (Código: ${item.codigo})` : `ID: ${id}`;
+
         const { error } = await supabase
             .from("itens")
             .delete()
@@ -246,6 +255,7 @@ export const deleteItem = async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
+        await registrarLog("DELETE", `/api/itens/${id}`, null, "Item Excluído", `O item ${itemInfo} foi removido do inventário`);
         return res.json({ message: "Item removido com sucesso." });
     } catch (err) {
         return res.status(500).json({ error: "Erro ao deletar item." });
@@ -282,7 +292,14 @@ export const getLogs = async (req, res) => {
     try {
         const { data: logs, error } = await supabase
             .from("logs")
-            .select("*")
+            .select(`
+                *,
+                usuarios (
+                    nome,
+                    tipo_usuario,
+                    especialidade
+                )
+            `)
             .order("created_at", { ascending: false })
             .limit(100);
 
@@ -682,6 +699,8 @@ export const criarAgendamento = async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
+        await registrarLog("POST", "/api/agendamentos", usuario_id, "Consulta Solicitada", `Solicitado agendamento para ${especialidade} em ${data.split('-').reverse().join('/')} às ${hora}`);
+
         return res.status(201).json({ 
             message: "Agendamento criado com sucesso.", 
             agendamento: novoAgendamento 
@@ -839,6 +858,8 @@ export const salvarDisponibilidade = async (req, res) => {
             return res.status(500).json({ error: erro.message });
         }
 
+        await registrarLog("POST", "/api/disponibilidade", profissional_id, "Agenda Configurada", `Configurou horários de atendimento para as ${dia_semana}s: ${horarios.join(', ')}`);
+
         return res.status(201).json({ 
             message: "Disponibilidade salva com sucesso.", 
             disponibilidade: resultado 
@@ -874,6 +895,33 @@ export const atualizarStatusAgendamento = async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
+        // Fetch patient and professional details for a rich log
+        try {
+            const { data: ag } = await supabase
+                .from("agendamentos")
+                .select("especialidade, data, hora, profissional_id, usuarios!agendamentos_usuario_id_fkey(nome), profissional:usuarios!agendamentos_profissional_id_fkey(nome)")
+                .eq("id", id)
+                .single();
+
+            let acao = `Consulta ${status}`;
+            let detalhes = `Consulta de ${ag?.especialidade} atualizada para ${status}`;
+
+            if (status === 'Atendido') {
+                acao = "Atendimento Concluído";
+                detalhes = `O profissional finalizou a consulta de ${ag?.especialidade} para o paciente ${ag?.usuarios?.nome || 'N/A'}`;
+            } else if (status === 'Cancelado') {
+                acao = "Consulta Cancelada";
+                detalhes = `A consulta do paciente ${ag?.usuarios?.nome || 'N/A'} foi cancelada`;
+            } else if (status === 'Confirmado') {
+                acao = "Consulta Confirmada";
+                detalhes = `Consulta do paciente ${ag?.usuarios?.nome || 'N/A'} para ${ag?.especialidade} foi confirmada`;
+            }
+
+            await registrarLog("PUT", `/api/agendamentos/${id}/status`, ag?.profissional_id || null, acao, detalhes);
+        } catch (e) {
+            // Ignora
+        }
+
         return res.json({ 
             message: `Status atualizado para ${status}.`, 
             agendamento: atualizado 
@@ -886,7 +934,7 @@ export const atualizarStatusAgendamento = async (req, res) => {
 // =====================================================
 // VERIFICAR 2FA - Valida o código enviado por e-mail
 // =====================================================
-export const verificar2FA = (req, res) => {
+export const verificar2FA = async (req, res) => {
     const { email, codigo } = req.body;
 
     if (!email || !codigo) return res.status(400).json({ error: "Email e código são obrigatórios." });
@@ -907,6 +955,8 @@ export const verificar2FA = (req, res) => {
 
     // Remove o código após o uso
     mfaCodes.delete(email);
+
+    await registrarLog("POST", "/api/login/verify", usuario.id, "Login Efetuado", `Usuário realizou login com sucesso via 2FA`);
 
     return res.json({ 
         token, 
@@ -1217,6 +1267,7 @@ export const salvarMensagemMural = async (req, res) => {
             .single();
 
         if (error) throw error;
+        await registrarLog("POST", "/api/mural", usuario_id, "Mensagem no Mural", `Publicou um recado para a equipe: "${texto.substring(0, 50)}${texto.length > 50 ? '...' : ''}"`);
         return res.status(201).json(novaMensagem);
     } catch (err) {
         console.error("[MURAL ERROR]:", err);

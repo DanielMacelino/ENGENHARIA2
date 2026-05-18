@@ -14,6 +14,58 @@
     <link rel="stylesheet" href="/public/pages.css?v=2">
     <link rel="icon" href="https://ojdnbtrbzdwinnatdycd.supabase.co/storage/v1/object/public/imagenspublicas/imagesifceredondo.JPG" type="image/x-icon">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom switch toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        
+        /* Spin animation for refresh button */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+    </style>
 </head>
 
 <body onload="carregarLogs()">
@@ -50,35 +102,49 @@
 
 
             <div class="card">
-            <div class="filter-bar">
+            <div class="filter-bar" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
                 <div class="filter-group">
                     <label>Data</label>
                     <input type="date" id="dataFiltro" class="filter-input">
                 </div>
-                <div class="filter-group" style="flex: 1;">
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
                     <label>Ação / Detalhes</label>
-                    <input type="text" id="filtro-acao" class="filter-input" placeholder="Pesquisar ação..." style="width: 100%;">
+                    <input type="text" id="filtro-acao" class="filter-input" placeholder="Pesquisar ação ou autor..." style="width: 100%;">
                 </div>
-                <button onclick="filtrarLogs()" class="btn-filter">&#x1f50d; Filtrar</button>
-                <button onclick="limparFiltros('logs')" class="btn-clear">Limpar Filtros</button>
-
+                <div class="filter-group" style="display: flex; gap: 10px;">
+                    <button onclick="filtrarLogs()" class="btn-filter" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <i data-lucide="search" style="width: 16px; height: 16px;"></i> Filtrar
+                    </button>
+                    <button onclick="limparFiltros('logs')" class="btn-clear">Limpar</button>
+                    <button onclick="carregarLogsCustom()" class="btn-filter" style="background: #4f46e5; border-color: #4f46e5; display: inline-flex; align-items: center; gap: 6px;" id="btn-atualizar-logs">
+                        <i data-lucide="refresh-cw" style="width: 16px; height: 16px;" id="icon-refresh"></i> Atualizar
+                    </button>
+                </div>
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 2px;">
+                    <label class="switch">
+                        <input type="checkbox" id="check-auto-refresh" onchange="toggleAutoRefresh(this)">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #475569; user-select: none;">Auto-atualizar (10s)</span>
+                </div>
             </div>
 
                 <div class="table-responsive" style="margin-top: 20px;">
                     <table class="table-custom">
                         <thead>
                             <tr>
-                                <th>Data / Hora</th>
-                                <th>Usuário</th>
+                                <th style="width: 160px;">Data / Hora</th>
+                                <th>Autor da Ação</th>
+                                <th>Perfil / Especialidade</th>
                                 <th>Ação Realizada</th>
-                                <th>Detalhe / Item Afetado</th>
+                                <th>Descrição Completa</th>
+                                <th>Recurso Técnico</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-logs">
                             <tr>
-                                <td colspan="4">Carregando histórico do servidor...</td>
+                                <td colspan="6" style="text-align: center; padding: 20px;">Carregando histórico do servidor...</td>
                             </tr>
-
                         </tbody>
                     </table>
                 </div>
