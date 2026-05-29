@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import https from "https";
 import router from "./routes/userRoutes.js";
+import statusRouter from "./routes/statusRoutes.js";
 import { seedDatabase } from "./seedLogic.js";
 import { executarBackupNuvem } from "./services/backupService.js";
 
@@ -12,7 +13,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Em Vercel, process.cwd() é a raiz do projeto.
-const root = process.cwd();
+// Se executado localmente de dentro da pasta backend, removemos o sufixo para apontar para a raiz.
+const root = process.cwd().replace(/[\\/]backend([\\/]?)$/, "");
 const views = path.resolve(root, "frontend/views");
 const publico = path.resolve(root, "frontend/public");
 const staticRoot = path.resolve(root, "frontend");
@@ -20,9 +22,16 @@ const uploads = path.resolve(root, "backend/uploads");
 
 const app = express();
 
-// Configuração de CORS Restrito (Permitir apenas o próprio servidor)
+// Configuração de CORS Restrito (Permitir apenas o próprio servidor e locais autorizados)
 const corsOptions = {
-    origin: 'http://localhost:3000',
+    origin: function (origin, callback) {
+        // Se for a mesma origem (origin === undefined) ou localhost ou domínio vercel
+        if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') || origin.includes('.vercel.app')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Não permitido por CORS'));
+        }
+    },
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
@@ -33,6 +42,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(staticRoot));
 app.use("/public", express.static(publico));
 app.use("/api", router);
+app.use("/api/status", statusRouter);
 app.use("/uploads", express.static(uploads));
 
 // Health check para Vercel

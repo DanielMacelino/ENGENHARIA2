@@ -202,5 +202,5 @@ export function injetarBadgeNoDOM() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', injetarBadgeNoDOM);
 } else {
-    injectarBadgeNoDOM();
+    injetarBadgeNoDOM();
 }

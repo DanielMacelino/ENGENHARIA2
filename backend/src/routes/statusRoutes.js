@@ -2,6 +2,26 @@ import express from "express";
 
 const router = express.Router();
 
+// Helper para obter hora e minuto no fuso horário do Ceará (America/Fortaleza)
+function getLocalTime() {
+    try {
+        const formatter = new Intl.DateTimeFormat("en-US", {
+            timeZone: "America/Fortaleza",
+            hour: "numeric",
+            minute: "numeric",
+            hour12: false
+        });
+        const parts = formatter.formatToParts(new Date());
+        const hora = parseInt(parts.find(p => p.type === 'hour').value, 10);
+        const minuto = parseInt(parts.find(p => p.type === 'minute').value, 10);
+        return { hora, minuto };
+    } catch (e) {
+        // Fallback caso fuso horário não seja suportado ou erro de parse
+        const now = new Date();
+        return { hora: now.getHours(), minuto: now.getMinutes() };
+    }
+}
+
 /**
  * GET /api/status/posto
  * Retorna o status do posto de saúde (aberto/fechado)
@@ -9,9 +29,7 @@ const router = express.Router();
  */
 router.get("/posto", (req, res) => {
     try {
-        const now = new Date();
-        const horaAtual = now.getHours();
-        const minutoAtual = now.getMinutes();
+        const { hora: horaAtual, minuto: minutoAtual } = getLocalTime();
         
         // Posto abre às 08:00 e fecha às 19:00
         const horaAbertura = 8;
@@ -68,8 +86,7 @@ router.get("/posto", (req, res) => {
  */
 router.get("/iot", (req, res) => {
     try {
-        const now = new Date();
-        const horaAtual = now.getHours();
+        const { hora: horaAtual } = getLocalTime();
         
         const estaAberto = horaAtual >= 8 && horaAtual < 19;
         

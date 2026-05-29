@@ -47,4 +47,22 @@ describe("Testes das Rotas da API", () => {
         expect(response.status).toBe(400);
         expect(response.body.error).toBe("ID e novo status são obrigatórios.");
     });
+
+    // Testes de Status e IoT
+    it("Deve obter o status completo do posto de saúde (GET /api/status/posto)", async () => {
+        const response = await request(app).get("/api/status/posto");
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("aberto");
+        expect(response.body).toHaveProperty("status_texto");
+        expect(response.body).toHaveProperty("hora_atual");
+    });
+
+    it("Deve obter o status simplificado para IoT (GET /api/status/iot)", async () => {
+        const response = await request(app).get("/api/status/iot");
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("status");
+        expect(response.body).toHaveProperty("led_color");
+        expect(["open", "closed"]).toContain(response.body.status);
+        expect(["green", "red"]).toContain(response.body.led_color);
+    });
 });
