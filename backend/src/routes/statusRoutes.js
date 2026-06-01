@@ -11,9 +11,50 @@ let iotStatus = {
 };
 
 /**
+ * GET /api/status/posto
+ * ✅ Retorna o status recebido do Wokwi
+ * Se Wokwi ainda não enviou nada, retorna status desconhecido
+ */
+router.get("/posto", (req, res) => {
+    try {
+        // Se Wokwi enviou um status, usa aquele
+        if (iotStatus.source === "wokwi" && iotStatus.status !== "unknown") {
+            return res.json({
+                aberto: iotStatus.status === "open",
+                hora_atual: new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Fortaleza", hour12: false }),
+                horario_funcionamento: "Controlado pelo Wokwi",
+                proxima_mudanca: iotStatus.status === "open" ? "quando Wokwi mudar" : "quando Wokwi mudar",
+                status_texto: iotStatus.status === "open" ? "✅ ABERTO" : "❌ FECHADO",
+                tipo_mudanca: "manual (Wokwi)",
+                iot_source: "wokwi",
+                led_color: iotStatus.led_color,
+                timestamp: iotStatus.timestamp
+            });
+        }
+        
+        // Se Wokwi não conectou ainda, retorna "desconectado"
+        return res.json({
+            aberto: false,
+            hora_atual: new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Fortaleza", hour12: false }),
+            horario_funcionamento: "Aguardando Wokwi",
+            proxima_mudanca: "N/A",
+            status_texto: "⚠️ ESPERANDO CONEXÃO DO WOKWI",
+            tipo_mudanca: "n/a",
+            iot_source: "nenhum",
+            led_color: "gray"
+        });
+    } catch (err) {
+        console.error("Erro ao verificar status do posto:", err);
+        return res.status(500).json({ 
+            error: "Erro ao verificar status do posto.",
+            details: err.message 
+        });
+    }
+});
+
+/**
  * GET /api/status/iot
- * ✅ Retorna APENAS o estado recebido do Wokwi
- * Se Wokwi não enviou nada, retorna "unknown"
+ * ✅ Retorna APENAS o estado recebido do Wokwi (versão simplificada)
  */
 router.get("/iot", (req, res) => {
     try {
@@ -31,15 +72,15 @@ router.get("/iot", (req, res) => {
 router.post("/iot/update", (req, res) => {
     try {
         const { status, led_color } = req.body;
-
+        
         // Validar entrada
         if (!status || !["open", "closed"].includes(status)) {
-            return res.status(400).json({
+            return res.status(400).json({ 
                 error: "Status inválido. Use 'open' ou 'closed'.",
-                received: status
+                received: status 
             });
         }
-
+        
         // ✅ ARMAZENAR estado recebido do Wokwi
         iotStatus = {
             status: status,
@@ -47,19 +88,19 @@ router.post("/iot/update", (req, res) => {
             timestamp: new Date().toISOString(),
             source: "wokwi"
         };
-
+        
         console.log(`🔄 Status IoT atualizado pelo Wokwi:`, iotStatus);
-
-        return res.json({
+        
+        return res.json({ 
             success: true,
             message: "Status atualizado com sucesso",
-            ...iotStatus
+            ...iotStatus 
         });
     } catch (err) {
         console.error("Erro ao atualizar status IoT:", err);
-        return res.status(500).json({
+        return res.status(500).json({ 
             error: "Erro ao atualizar status",
-            details: err.message
+            details: err.message 
         });
     }
 });
