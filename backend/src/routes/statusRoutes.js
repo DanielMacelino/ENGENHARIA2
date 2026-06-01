@@ -31,15 +31,15 @@ router.get("/iot", (req, res) => {
 router.post("/iot/update", (req, res) => {
     try {
         const { status, led_color } = req.body;
-        
+
         // Validar entrada
         if (!status || !["open", "closed"].includes(status)) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 error: "Status inválido. Use 'open' ou 'closed'.",
-                received: status 
+                received: status
             });
         }
-        
+
         // ✅ ARMAZENAR estado recebido do Wokwi
         iotStatus = {
             status: status,
@@ -47,19 +47,19 @@ router.post("/iot/update", (req, res) => {
             timestamp: new Date().toISOString(),
             source: "wokwi"
         };
-        
+
         console.log(`🔄 Status IoT atualizado pelo Wokwi:`, iotStatus);
-        
-        return res.json({ 
+
+        return res.json({
             success: true,
             message: "Status atualizado com sucesso",
-            ...iotStatus 
+            ...iotStatus
         });
     } catch (err) {
         console.error("Erro ao atualizar status IoT:", err);
-        return res.status(500).json({ 
+        return res.status(500).json({
             error: "Erro ao atualizar status",
-            details: err.message 
+            details: err.message
         });
     }
 });
