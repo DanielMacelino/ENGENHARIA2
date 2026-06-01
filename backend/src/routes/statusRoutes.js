@@ -2,102 +2,65 @@ import express from "express";
 
 const router = express.Router();
 
-// Helper para obter hora e minuto no fuso horário do Ceará (America/Fortaleza)
-function getLocalTime() {
-    try {
-        const formatter = new Intl.DateTimeFormat("en-US", {
-            timeZone: "America/Fortaleza",
-            hour: "numeric",
-            minute: "numeric",
-            hour12: false
-        });
-        const parts = formatter.formatToParts(new Date());
-        const hora = parseInt(parts.find(p => p.type === 'hour').value, 10);
-        const minuto = parseInt(parts.find(p => p.type === 'minute').value, 10);
-        return { hora, minuto };
-    } catch (e) {
-        // Fallback caso fuso horário não seja suportado ou erro de parse
-        const now = new Date();
-        return { hora: now.getHours(), minuto: now.getMinutes() };
-    }
-}
+// ✅ Estado compartilhado com Wokwi (em memória)
+let iotStatus = {
+    status: "unknown",
+    led_color: "gray",
+    timestamp: null,
+    source: "none"
+};
 
 /**
- * GET /api/status/posto
- * Retorna o status do posto de saúde (aberto/fechado)
- * Horário: 08:00 até 19:00
+ * GET /api/status/iot
+ * ✅ Retorna APENAS o estado recebido do Wokwi
+ * Se Wokwi não enviou nada, retorna "unknown"
  */
-router.get("/posto", (req, res) => {
+router.get("/iot", (req, res) => {
     try {
-        const { hora: horaAtual, minuto: minutoAtual } = getLocalTime();
-        
-        // Posto abre às 08:00 e fecha às 19:00
-        const horaAbertura = 8;
-        const horaFechamento = 19;
-        
-        const estaAberto = horaAtual >= horaAbertura && horaAtual < horaFechamento;
-        
-        // Formatar horário atual
-        const horaFormatada = `${String(horaAtual).padStart(2, '0')}:${String(minutoAtual).padStart(2, '0')}`;
-        
-        // Determinar próxima mudança
-        let proximaAbertura;
-        let proximaFechamento;
-        
-        if (estaAberto) {
-            proximaFechamento = horaFechamento;
-            proximaAbertura = horaAbertura + 24; // Próximo dia
-        } else {
-            proximaAbertura = horaAbertura;
-            if (horaAtual >= horaFechamento) {
-                proximaFechamento = horaFechamento + 24; // Próximo dia
-            } else {
-                proximaFechamento = horaFechamento;
-            }
-        }
-        
-        // Formatar proximas horas
-        const proximaAberturaFormatada = String(proximaAbertura % 24).padStart(2, '0') + ":00";
-        const proximaFechamentoFormatada = String(proximaFechamento % 24).padStart(2, '0') + ":00";
-        
-        return res.json({
-            aberto: estaAberto,
-            hora_atual: horaFormatada,
-            horario_funcionamento: `${String(horaAbertura).padStart(2, '0')}:00 - ${String(horaFechamento).padStart(2, '0')}:00`,
-            proxima_abertura: proximaAberturaFormatada,
-            proxima_fechamento: proximaFechamentoFormatada,
-            proxima_mudanca: estaAberto ? proximaFechamentoFormatada : proximaAberturaFormatada,
-            status_texto: estaAberto ? "✅ ABERTO" : "❌ FECHADO",
-            tipo_mudanca: estaAberto ? "fechamento" : "abertura"
-        });
+        return res.json(iotStatus);
     } catch (err) {
-        console.error("Erro ao verificar status do posto:", err);
-        return res.status(500).json({ 
-            error: "Erro ao verificar status do posto.",
-            details: err.message 
-        });
+        return res.status(500).json({ status: "error" });
     }
 });
 
 /**
- * GET /api/status/iot
- * Simula resposta para dispositivo IoT (Wokwi)
- * Retorna formato simplificado para LED RGB
+ * POST /api/status/iot/update
+ * ✅ Recebe atualizações do Wokwi
+ * O Wokwi envia o estado do LED e o backend armazena
  */
-router.get("/iot", (req, res) => {
+router.post("/iot/update", (req, res) => {
     try {
-        const { hora: horaAtual } = getLocalTime();
+        const { status, led_color } = req.body;
         
-        const estaAberto = horaAtual >= 8 && horaAtual < 19;
+        // Validar entrada
+        if (!status || !["open", "closed"].includes(status)) {
+            return res.status(400).json({ 
+                error: "Status inválido. Use 'open' ou 'closed'.",
+                received: status 
+            });
+        }
         
-        // Resposta simplificada para IoT
-        return res.json({
-            status: estaAberto ? "open" : "closed",
-            led_color: estaAberto ? "green" : "red",
-            timestamp: new Date().toISOString()
+        // ✅ ARMAZENAR estado recebido do Wokwi
+        iotStatus = {
+            status: status,
+            led_color: led_color || (status === "open" ? "green" : "red"),
+            timestamp: new Date().toISOString(),
+            source: "wokwi"
+        };
+        
+        console.log(`🔄 Status IoT atualizado pelo Wokwi:`, iotStatus);
+        
+        return res.json({ 
+            success: true,
+            message: "Status atualizado com sucesso",
+            ...iotStatus 
         });
     } catch (err) {
-        return res.status(500).json({ status: "error" });
+        console.error("Erro ao atualizar status IoT:", err);
+        return res.status(500).json({ 
+            error: "Erro ao atualizar status",
+            details: err.message 
+        });
     }
 });
 
