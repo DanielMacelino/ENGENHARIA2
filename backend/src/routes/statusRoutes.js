@@ -21,11 +21,18 @@ router.get("/posto", (req, res) => {
         if (iotStatus.source === "wokwi" && iotStatus.status !== "unknown") {
             return res.json({
                 aberto: iotStatus.status === "open",
-                hora_atual: new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Fortaleza", hour12: false }),
-                horario_funcionamento: "Controlado pelo Wokwi",
-                proxima_mudanca: iotStatus.status === "open" ? "quando Wokwi mudar" : "quando Wokwi mudar",
+                hora_atual: new Date().toLocaleTimeString("pt-BR", { 
+                    timeZone: "America/Fortaleza", 
+                    hour12: false,
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }),
+                horario_funcionamento: "08:00 - 19:00",
+                proxima_abertura: "08:00",
+                proxima_fechamento: "19:00",
+                proxima_mudanca: iotStatus.status === "open" ? "19:00" : "08:00",
                 status_texto: iotStatus.status === "open" ? "✅ ABERTO" : "❌ FECHADO",
-                tipo_mudanca: "manual (Wokwi)",
+                tipo_mudanca: iotStatus.status === "open" ? "fechamento" : "abertura",
                 iot_source: "wokwi",
                 led_color: iotStatus.led_color,
                 timestamp: iotStatus.timestamp
@@ -35,10 +42,17 @@ router.get("/posto", (req, res) => {
         // Se Wokwi não conectou ainda, retorna "desconectado"
         return res.json({
             aberto: false,
-            hora_atual: new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Fortaleza", hour12: false }),
-            horario_funcionamento: "Aguardando Wokwi",
-            proxima_mudanca: "N/A",
-            status_texto: "⚠️ ESPERANDO CONEXÃO DO WOKWI",
+            hora_atual: new Date().toLocaleTimeString("pt-BR", { 
+                timeZone: "America/Fortaleza", 
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit"
+            }),
+            horario_funcionamento: "08:00 - 19:00",
+            proxima_abertura: "08:00",
+            proxima_fechamento: "19:00",
+            proxima_mudanca: "08:00",
+            status_texto: "⚠️ AGUARDANDO WOKWI",
             tipo_mudanca: "n/a",
             iot_source: "nenhum",
             led_color: "gray"
