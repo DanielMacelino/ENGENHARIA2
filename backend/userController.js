@@ -1176,10 +1176,6 @@ export const relatorioMonitoramento = async (req, res) => {
         // 4. Gerar PDF
         const doc = new PDFDocument({ margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
-        router.post("/distancia", Controller.calcularDistancia);
-        router.get("/relatorio-monitoramento", Controller.relatorioMonitoramento);
-        router.get("/mural", Controller.getMensagensMural);
-        router.post("/mural", Controller.salvarMensagemMural);
         res.setHeader('Content-Disposition', 'attachment; filename=relatorio_monitoramento.pdf');
         doc.pipe(res);
 
